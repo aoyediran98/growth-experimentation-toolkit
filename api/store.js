@@ -3,6 +3,7 @@
 // Backed by Upstash Redis (Vercel Marketplace "Upstash for Redis" sets KV_REST_API_URL / KV_REST_API_TOKEN).
 // Without those env vars it falls back to an in-memory map, which resets on each cold start (fine for local dev only).
 import { Redis } from "@upstash/redis";
+import { checkPasscode } from "./_auth.js";
 
 const mem = globalThis.__gxtMem || (globalThis.__gxtMem = new Map());
 function redis() {
@@ -13,6 +14,7 @@ function redis() {
 const ns = (k) => "gxt:" + String(k).replace(/[^A-Za-z0-9_\-./:]/g, "");
 
 export default async function handler(req, res) {
+  if (!checkPasscode(req, res)) return;
   const r = redis();
   if (req.method === "GET") {
     const key = req.query.key;

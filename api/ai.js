@@ -1,10 +1,12 @@
 // POST /api/ai  { input: string | [{role, content}], json: boolean, tier: "quick"|"default"|"complex" }
 import Anthropic from "@anthropic-ai/sdk";
+import { checkPasscode } from "./_auth.js";
 
 const MODELS = { quick: "claude-haiku-5-5", default: "claude-sonnet-5-5", complex: "claude-sonnet-5-5" };
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  if (!checkPasscode(req, res)) return;
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set" });
   const { input, json = false, tier = "default" } = req.body || {};
   if (!input) return res.status(400).json({ error: "input is required" });
