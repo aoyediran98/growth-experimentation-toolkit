@@ -2,6 +2,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 
 const MODELS = { quick: "claude-haiku-5-5", default: "claude-sonnet-5-5", complex: "claude-sonnet-5-5" };
+// Reasoning tokens count against max_tokens and were cutting the JSON short; the methods are explicit enough without them.
+// Each model names its "off" setting differently.
+const THINKING_OFF = { quick: "disabled", default: "between_tools", complex: "between_tools" };
 
 function parseJSON(text) {
   const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
@@ -27,7 +30,8 @@ export default async function handler(req, res) {
   const ask = async (msgs) => {
     const msg = await client.messages.create({
       model: MODELS[tier] || MODELS.default,
-      max_tokens: 8000,
+      max_tokens: 16000,
+      thinking: { type: THINKING_OFF[tier] || THINKING_OFF.default },
       system: json ? "Respond with valid JSON only. No prose, no code fences. Escape any double quotes inside string values." : undefined,
       messages: msgs,
     });
