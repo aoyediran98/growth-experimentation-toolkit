@@ -25,4 +25,4 @@ vercel --prod --yes
 Without Redis the app still works; roadmap, learnings and history then live in each visitor's browser only.
 
 ## Live
-_URL goes here after deploy._
+https://gxt-vercel.vercel.app
