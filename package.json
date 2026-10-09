@@ -1,0 +1,8 @@
+{
+  "name": "growth-experimentation-toolkit",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "vercel dev","deploy": "vercel --prod --yes" },
+  "dependencies": { "@anthropic-ai/sdk": "^0.52.0", "@upstash/redis": "^1.34.0" }
+}

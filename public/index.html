@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Growth Experimentation Toolkit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a left rail of lifecycle stages (research → learn), one working panel at a time, summary strip above detail. */
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --fg:#1c1f22; --muted:#5f6670; --line:#dcdad3; --soft:#eeece6;
+  --accent:#0b6e70; --accent-fg:#ffffff; --accent-soft:#dff0ef;
+  --good:#1f7a3a; --warn:#b46a00; --bad:#b3261e; --good-soft:#e2f2e6; --warn-soft:#fbeedb; --bad-soft:#f9e0de;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151719; --panel:#1e2124; --fg:#e8e6e1; --muted:#9aa1a9; --line:#33383d; --soft:#272b2f;
+  --accent:#4fc1c0; --accent-fg:#0d1b1b; --accent-soft:#1d3536;
+  --good:#6fcf8a; --warn:#f0b35a; --bad:#f28b82; --good-soft:#1c3324; --warn-soft:#3a2d14; --bad-soft:#3e1f1d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151719; --panel:#1e2124; --fg:#e8e6e1; --muted:#9aa1a9; --line:#33383d; --soft:#272b2f;
+  --accent:#4fc1c0; --accent-fg:#0d1b1b; --accent-soft:#1d3536;
+  --good:#6fcf8a; --warn:#f0b35a; --bad:#f28b82; --good-soft:#1c3324; --warn-soft:#3a2d14; --bad-soft:#3e1f1d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;padding-block:0 32px;padding-inline:16px;max-width:1240px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-size:22px;font-weight:600}
+h2{font-size:18px;font-weight:600}
+h3{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+p{margin:0}
+.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:500}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 16px;padding-block:20px 12px;border-bottom:1px solid var(--line)}
+header .sub{color:var(--muted);font-size:14px}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;padding-top:20px}
+@media (max-width:820px){.layout{grid-template-columns:1fr;gap:12px}}
+nav.rail{display:flex;flex-direction:column;gap:2px;position:sticky;top:env(safe-area-inset-top,0px);align-self:start}
+@media (max-width:820px){nav.rail{flex-direction:row;overflow-x:auto;position:static;padding-bottom:6px}}
+nav.rail .stage{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:12px 10px 4px}
+@media (max-width:820px){nav.rail .stage{display:none}}
+nav.rail button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;font-size:14px;white-space:nowrap}
+nav.rail button:hover{background:var(--soft)}
+nav.rail button:focus-visible{outline:2px solid var(--accent)}
+nav.rail button[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+nav.rail button .n{font-family:var(--mono);font-size:11px;color:var(--muted);width:16px}
+main{min-width:0}
+section.tool{display:none;flex-direction:column;gap:18px}
+section.tool.active{display:flex}
+.intro{display:flex;flex-direction:column;gap:4px}
+.intro p{color:var(--muted);max-width:68ch}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.row>*{min-width:0}
+.field{display:flex;flex-direction:column;gap:4px;flex:1 1 150px}
+.field label{font-size:12px;font-weight:500;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px;width:100%;min-width:0}
+textarea{min-height:140px;resize:vertical;font-size:14px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input[type=number]{font-family:var(--mono)}
+.btn{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:8px 14px}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.small{padding:4px 10px;font-size:13px;font-weight:500}
+.btn:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.status{font-size:13px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.stat .v{font-family:var(--mono);font-size:18px;font-weight:500;font-variant-numeric:tabular-nums}
+.stat .d{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted)}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.accent{background:var(--accent-soft);color:var(--accent)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:8px;background:var(--panel);min-width:0}
+.card.selected{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.card .title{font-weight:600}
+.card .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.card .hyp{font-size:14px}
+.card .verb{font-size:13px;color:var(--muted);border-left:2px solid var(--line);padding-left:8px}
+.card .foot{display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between;align-items:center;margin-top:auto}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.small{font-size:13px;color:var(--muted)}
+.md{font-size:14.5px;line-height:1.55;max-width:78ch}
+.md h1{font-size:20px;margin:12px 0 6px}.md h2{font-size:17px;margin:16px 0 6px}.md h3{font-size:14px;text-transform:none;letter-spacing:0;color:var(--fg);margin:12px 0 4px}
+.md p{margin:6px 0}.md ul{margin:6px 0;padding-left:20px}.md li{margin:2px 0}
+.md table{border-collapse:collapse;font-size:13px;margin:8px 0}.md th,.md td{border:1px solid var(--line);padding:4px 8px;text-align:left;vertical-align:top}
+.md code{font-family:var(--mono);font-size:13px;background:var(--soft);padding:1px 4px;border-radius:3px}
+.tablewrap{overflow-x:auto}
+table.data{border-collapse:collapse;width:100%;font-size:13.5px}
+table.data th,table.data td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+table.data th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+table.data td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.chart .axis{stroke:var(--line)}
+.chart .grid{stroke:var(--line);stroke-dasharray:2 3}
+.chart .line{fill:none;stroke:var(--accent);stroke-width:2}
+.chart .area{fill:var(--accent);opacity:.12}
+.chart .mark{fill:var(--accent)}
+.chart .bar{fill:var(--accent)}
+.chart .bar.null{fill:var(--line)}
+.arms{display:flex;flex-direction:column;gap:8px}
+.arm{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}
+@media (max-width:600px){.arm{grid-template-columns:1fr 1fr}}
+.note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:6px;padding:8px 10px}
+.kanban{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:10px;overflow-x:auto}
+.col{background:var(--soft);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.col h3{display:flex;justify-content:space-between}
+.col .card{padding:10px;gap:6px}
+.col .card select{padding:4px 6px;font-size:12px}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:11px;padding:1px 6px;border-radius:4px;background:var(--soft);color:var(--muted);font-family:var(--mono)}
+.summary-row{display:flex;flex-wrap:wrap;gap:8px}
+.badge-row{display:flex;flex-wrap:wrap;gap:6px}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.hidden{display:none!important}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Growth Experimentation Toolkit</h1>
+    <p class="sub">One place to follow a test through its life: research, hypothesis, brief, build, run, read-out, learn.</p>
+  </div>
+  <div class="badge-row"><span class="pill" id="aiPill">AI: checking</span><span class="pill" id="storePill">Storage: checking</span></div>
+</header>
+
+<div class="layout">
+<nav class="rail" id="rail">
+  <div class="stage">Research</div>
+  <button data-tab="synth"><span class="n">1</span>Synthesise</button>
+  <button data-tab="audit"><span class="n">2</span>Page audit</button>
+  <div class="stage">Plan</div>
+  <button data-tab="calc"><span class="n">3</span>Sample size</button>
+  <button data-tab="brief"><span class="n">4</span>Brief</button>
+  <button data-tab="variants"><span class="n">5</span>Variants</button>
+  <button data-tab="roadmap"><span class="n">6</span>Roadmap</button>
+  <div class="stage">Run</div>
+  <button data-tab="peek"><span class="n">7</span>Peeking guard</button>
+  <div class="stage">Conclude</div>
+  <button data-tab="readout"><span class="n">8</span>Read-out</button>
+  <button data-tab="learn"><span class="n">9</span>Learnings</button>
+  <button data-tab="history"><span class="n">10</span>History</button>
+</nav>
+
+<main>
+
+<!-- 1 SYNTHESISE -->
+<section class="tool active" id="tab-synth">
+  <div class="intro"><h2>Research to hypotheses</h2><p>Paste messy inputs: session-recording notes, reviews, support-ticket themes, survey verbatims. They are clustered into problem statements, scored by frequency × severity, and mapped to a testable hypothesis each. Send any card to the roadmap or straight into a brief.</p></div>
+  <div class="panel">
+    <div class="row">
+      <div class="field" style="flex:0 1 240px"><label for="synthCompany">Company or product</label><input id="synthCompany" value="Juniper (weight-management programme)"></div>
+      <div class="actions"><button class="btn small" id="synthSample">Load sample inputs</button><label class="btn small" for="synthFile">Add .txt / .csv</label><input id="synthFile" type="file" accept=".txt,.csv" class="hidden"></div>
+    </div>
+    <div class="field"><label for="synthInput">Inputs, one verbatim per line (prefix with a source tag if you have one, e.g. [trustpilot 2★])</label><textarea id="synthInput" placeholder="[support] Couldn't tell if my order went through, no confirmation email for 20 minutes&#10;[review 2★] The quiz asked the same question twice and then timed out"></textarea></div>
+    <div class="actions"><button class="btn primary" id="synthRun">Synthesise</button><span class="status" id="synthStatus"></span></div>
+  </div>
+  <div id="synthOut" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+    <div class="stats" id="synthStats"></div>
+    <div class="cards" id="synthCards"></div>
+    <div class="panel"><h3>What to test first</h3><p id="synthFirst"></p><div class="actions"><button class="btn small" id="synthCopy">Copy as Markdown</button><button class="btn small" id="synthAddAll">Add all to roadmap</button></div></div>
+  </div>
+</section>
+
+<!-- 2 AUDIT -->
+<section class="tool" id="tab-audit">
+  <div class="intro"><h2>Page audit</h2><p>Paste the visible copy of a landing page (and the ad or headline that drives traffic to it, if you have it). The page is scored against five fixed heuristics and each issue is mapped to a hypothesis in the same format as Synthesise.</p></div>
+  <div class="panel">
+    <div class="row">
+      <div class="field"><label for="auditUrl">Page URL (for the record)</label><input id="auditUrl" placeholder="https://"></div>
+      <div class="field"><label for="auditAd">Ad or source message the visitor saw (optional)</label><input id="auditAd" placeholder="e.g. 'Lose 15% of body weight with clinician-led care'"></div>
+    </div>
+    <div class="field"><label for="auditCopy">Page copy, top to bottom</label><textarea id="auditCopy" placeholder="Headline&#10;Subhead&#10;CTA label&#10;Section text..."></textarea></div>
+    <div class="actions"><button class="btn primary" id="auditRun">Audit</button><button class="btn small" id="auditSample">Load sample</button><span class="status" id="auditStatus"></span></div>
+  </div>
+  <div id="auditOut" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+    <div class="stats" id="auditScores"></div>
+    <div class="cards" id="auditCards"></div>
+  </div>
+</section>
+
+<!-- 3 CALCULATOR -->
+<section class="tool" id="tab-calc">
+  <div class="intro"><h2>Sample size and duration</h2><p>Two-sided test of two proportions. Answers "can we even detect that?" before anything is built. Values here feed the brief and the peeking guard.</p></div>
+  <div class="panel">
+    <div class="row">
+      <div class="field"><label for="cBase">Baseline conversion rate %</label><input id="cBase" type="number" step="0.1" value="3.2"></div>
+      <div class="field"><label for="cMde">Minimum detectable effect, relative %</label><input id="cMde" type="number" step="1" value="10"></div>
+      <div class="field"><label for="cPower">Power %</label><input id="cPower" type="number" step="1" value="80"></div>
+      <div class="field"><label for="cAlpha">Significance α %</label><input id="cAlpha" type="number" step="1" value="5"></div>
+      <div class="field"><label for="cTraffic">Daily visitors in the test</label><input id="cTraffic" type="number" step="100" value="4000"></div>
+      <div class="field"><label for="cArms">Arms (incl. control)</label><input id="cArms" type="number" min="2" max="6" value="2"></div>
+    </div>
+  </div>
+  <div class="stats" id="calcStats"></div>
+  <div class="panel"><h3>Run time by MDE at this traffic</h3><svg class="chart" id="calcChart" viewBox="0 0 640 220" role="img" aria-label="Days to run against minimum detectable effect"></svg><p class="small">Dotted line marks a 14-day floor: fewer than two full weekly cycles rarely gives a trustworthy read.</p></div>
+</section>
+
+<!-- 4 BRIEF -->
+<section class="tool" id="tab-brief">
+  <div class="intro"><h2>Test brief</h2><p>Drafts the pre-commitment: metrics, success criteria, decision rule, pre-registered segments, sample and run time from the calculator, and a stop rule. The read-out judges results against this, so write it before the build.</p></div>
+  <div class="panel">
+    <div class="field"><label for="briefHyp">Hypothesis (pick a card in Synthesise or the roadmap, or write one)</label><textarea id="briefHyp" style="min-height:90px" placeholder="We believe that ... for ... will ... because ... We'll know this is true when ..."></textarea></div>
+    <div class="row">
+      <div class="field"><label for="briefSurface">Surface</label><input id="briefSurface" placeholder="e.g. assessment flow step 3"></div>
+      <div class="field"><label for="briefMetric">Primary metric</label><input id="briefMetric" placeholder="e.g. assessment completion rate"></div>
+      <div class="field"><label for="briefGuard">Guardrails</label><input id="briefGuard" placeholder="e.g. refund rate, support contacts per order"></div>
+    </div>
+    <p class="small" id="briefCalcNote"></p>
+    <div class="actions"><button class="btn primary" id="briefRun">Draft brief</button><button class="btn small" id="briefToReadout">Use in read-out</button><button class="btn small" id="briefCopy">Copy as Markdown</button><span class="status" id="briefStatus"></span></div>
+  </div>
+  <div class="panel md" id="briefOut"><p class="small">The brief appears here.</p></div>
+</section>
+
+<!-- 5 VARIANTS -->
+<section class="tool" id="tab-variants">
+  <div class="intro"><h2>Variants and persona pre-screen</h2><p>Three copy variants per hypothesis for headline, subhead and CTA, each tagged with its principle and segment. The persona pre-screen ranks them using personas grounded in the research inputs. It is a prioritisation filter, never a substitute for the test.</p></div>
+  <div class="panel">
+    <div class="field"><label for="varHyp">Hypothesis</label><textarea id="varHyp" style="min-height:80px"></textarea></div>
+    <div class="row"><div class="field"><label for="varCurrent">Current headline / subhead / CTA (optional)</label><input id="varCurrent" placeholder="Start your assessment | Clinician-led weight care | Get started"></div></div>
+    <div class="actions"><button class="btn primary" id="varRun">Generate variants</button><button class="btn" id="varScreen" disabled>Pre-screen with personas</button><span class="status" id="varStatus"></span></div>
+  </div>
+  <div class="tablewrap panel hidden" id="varOut"></div>
+  <div class="panel hidden" id="personaOut"></div>
+</section>
+
+<!-- 6 ROADMAP -->
+<section class="tool" id="tab-roadmap">
+  <div class="intro"><h2>Roadmap</h2><p>Every hypothesis with its ICE score and status. "What next" orders the backlog by the method: riskiest assumptions first, cheap validations before big builds.</p></div>
+  <div class="panel">
+    <div class="actions"><button class="btn primary" id="rmNext">What should we test next?</button><button class="btn small" id="rmAdd">Add hypothesis by hand</button><button class="btn small" id="rmClear">Clear board</button><span class="status" id="rmStatus"></span></div>
+    <div class="note hidden" id="rmNextOut"></div>
+  </div>
+  <div class="kanban" id="kanban"></div>
+</section>
+
+<!-- 7 PEEKING GUARD -->
+<section class="tool" id="tab-peek">
+  <div class="intro"><h2>Peeking and early-stop guard</h2><p>Enter where the test is today. The guard says whether a read is valid yet, simulates how often an A/A test would look "significant" if you peeked on your schedule, and gives the earliest valid read date.</p></div>
+  <div class="panel">
+    <div class="row">
+      <div class="field"><label for="pkStart">Start date</label><input id="pkStart" type="date"></div>
+      <div class="field"><label for="pkPlanned">Planned sample per arm (from calculator)</label><input id="pkPlanned" type="number" value="0"></div>
+      <div class="field"><label for="pkPeeks">Peeks you intend before the end</label><input id="pkPeeks" type="number" min="0" max="30" value="5"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="pkNa">Control visitors so far</label><input id="pkNa" type="number" value="9800"></div>
+      <div class="field"><label for="pkCa">Control conversions</label><input id="pkCa" type="number" value="318"></div>
+      <div class="field"><label for="pkNb">Variant visitors so far</label><input id="pkNb" type="number" value="9750"></div>
+      <div class="field"><label for="pkCb">Variant conversions</label><input id="pkCb" type="number" value="352"></div>
+    </div>
+    <div class="actions"><button class="btn primary" id="pkRun">Check</button></div>
+  </div>
+  <div class="stats" id="pkStats"></div>
+  <div class="panel hidden" id="pkVerdict"></div>
+  <div class="panel"><h3>False-positive rate when peeking on an A/A test</h3><svg class="chart" id="pkChart" viewBox="0 0 640 200" role="img" aria-label="Simulated false positive rate by number of peeks"></svg><p class="small" id="pkChartNote">Monte Carlo, 2,000 simulated A/A tests at the current baseline and planned sample, calling the test whenever p &lt; α at a peek.</p></div>
+</section>
+
+<!-- 8 READ-OUT -->
+<section class="tool" id="tab-readout">
+  <div class="intro"><h2>Read-out</h2><p>The conclusion mirrors the brief and closes the loop on the pre-committed decision rule. Statistics are computed here in the page; the AI only writes the narrative around numbers it is handed.</p></div>
+  <div class="panel">
+    <div class="field"><label for="roBrief">Original brief</label><textarea id="roBrief" style="min-height:110px" placeholder="Paste the brief, or draft one in the Brief tab and press 'Use in read-out'."></textarea></div>
+    <div class="row">
+      <div class="field"><label for="roStart">Start</label><input id="roStart" type="date"></div>
+      <div class="field"><label for="roEnd">End</label><input id="roEnd" type="date"></div>
+      <div class="field"><label for="roPlanned">Planned sample per arm</label><input id="roPlanned" type="number" value="0"></div>
+      <div class="field"><label for="roMde">MDE relative %</label><input id="roMde" type="number" value="10"></div>
+      <div class="field"><label for="roSplit">Intended split (e.g. 50/50)</label><input id="roSplit" value="50/50"></div>
+    </div>
+    <div class="arms" id="roArms"></div>
+    <div class="actions"><button class="btn small" id="roAddArm">Add arm</button><label class="btn small" for="roCsv">Import CSV (Optimizely / VWO / GA4 export)</label><input id="roCsv" type="file" accept=".csv,.tsv,.txt" class="hidden"><span class="status" id="roCsvStatus"></span></div>
+    <div class="row">
+      <div class="field"><label for="roGuard">Guardrail results (one per line: name, control, variant, pass/breach)</label><textarea id="roGuard" style="min-height:70px" placeholder="Refund rate, 2.1%, 2.2%, pass"></textarea></div>
+      <div class="field"><label for="roDev">Deviations, bugs, overlapping campaigns, segments</label><textarea id="roDev" style="min-height:70px" placeholder="Tracking gap on day 3 (4 hours). Paid social spend +30% from day 9."></textarea></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="roTraffic">Annual visitors to this surface</label><input id="roTraffic" type="number" value="1500000"></div>
+      <div class="field"><label for="roValue">Value per conversion £</label><input id="roValue" type="number" value="38"></div>
+    </div>
+    <div class="actions"><button class="btn" id="roStats">Compute statistics</button><button class="btn primary" id="roRun">Write read-out</button><button class="btn small" id="roSample">Load sample test</button><button class="btn small" id="roCopy">Copy as Markdown</button><span class="status" id="roStatus"></span></div>
+  </div>
+  <div class="stats" id="roStatStrip"></div>
+  <div class="panel md" id="roOut"><p class="small">The read-out appears here. Compute statistics first to see the strip above.</p></div>
+  <div class="panel hidden" id="roLearn"><h3>Log learnings</h3><div id="roLearnList" class="tags"></div><div class="actions"><button class="btn small" id="roLearnSave">Save to library</button></div></div>
+</section>
+
+<!-- 9 LEARNINGS -->
+<section class="tool" id="tab-learn">
+  <div class="intro"><h2>Learnings library</h2><p>What each test taught about users, tagged by surface, principle, segment and outcome. The summary line is the point: patterns that compound across tests.</p></div>
+  <div class="panel">
+    <div class="row">
+      <div class="field"><label for="lnSearch">Search</label><input id="lnSearch" placeholder="social proof, checkout, mobile..."></div>
+      <div class="actions"><button class="btn small" id="lnAdd">Add learning by hand</button><button class="btn small" id="lnSummary">Summarise patterns</button></div>
+    </div>
+    <div class="note hidden" id="lnSummaryOut"></div>
+  </div>
+  <div class="tablewrap panel" id="lnTable"></div>
+</section>
+
+<!-- 10 HISTORY -->
+<section class="tool" id="tab-history">
+  <div class="intro"><h2>History</h2><p>Every synthesis, audit, brief, variant set and read-out is banked here with a timestamp, so nothing you generate is lost and any earlier run can be reopened.</p></div>
+  <div class="panel"><div class="row"><div class="field"><label for="hsSearch">Search</label><input id="hsSearch" placeholder="company, hypothesis, date..."></div><div class="actions"><button class="btn small" id="hsClear">Clear history</button></div></div></div>
+  <div class="tablewrap panel" id="hsTable"></div>
+</section>
+
+</main>
+</div>
+
+<script>
+/* Runtime shim: outside claude.ai, route AI calls to /api/ai and storage to /api/store */
+(function(){
+  if(window.claude&&window.claude.use)return;
+  async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||r.statusText),{code:r.status===429?'rate_limited':'error'});return j}
+  const sample=async(input,opts={})=>{const j=await post('/api/ai',{input,json:false,tier:opts.modelTier||'default'});if(opts.onText)opts.onText({text:j.text,delta:j.text});return{text:j.text,truncated:false,modelTierApplied:'default'}};
+  sample.json=async(input,opts={})=>{const j=await post('/api/ai',{input,json:true,tier:opts.modelTier||'default'});return j.value};
+  sample.limits=async()=>({maxPromptBytes:200000});
+  const listeners={};
+  function docRef(path){return{path,
+    async get(){const j=await fetch('/api/store?key='+encodeURIComponent(path)).then(r=>r.json());return{id:path,exists:j.value!=null,data:()=>j.value||undefined}},
+    async set(data){await post('/api/store',{key:path,value:data});(listeners[path]||[]).forEach(f=>f({id:path,exists:true,data:()=>data}))},
+    async update(data){const cur=(await this.get()).data()||{};return this.set({...cur,...data})},
+    async delete(){await post('/api/store',{key:path,value:null})},
+    onSnapshot(next,err){(listeners[path]=listeners[path]||[]).push(next);this.get().then(next).catch(err||(()=>{}));const t=setInterval(()=>this.get().then(next).catch(()=>{}),20000);return()=>{clearInterval(t);listeners[path]=(listeners[path]||[]).filter(f=>f!==next)}}}}
+  const db={doc:docRef,collection(){throw new Error('collections not supported in shim')}};
+  const user={id:async()=>'local',isOwner:()=>true,canEdit:()=>true,can:()=>true,me:async()=>({id:'local'})};
+  const caps={sample,db,user};
+  window.claude={use:async name=>caps[name]||null};
+})();
+</script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtPct=(x,d=2)=>(x*100).toFixed(d)+'%';
+const fmtN=x=>Math.round(x).toLocaleString('en-GB');
+const uid=()=>Math.random().toString(36).slice(2,10);
+
+/* ---------- Tabs ---------- */
+const rail=$('rail');
+function show(tab){document.querySelectorAll('section.tool').forEach(s=>s.classList.toggle('active',s.id==='tab-'+tab));rail.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));try{localStorage.setItem('gxt.tab',tab)}catch(e){}}
+rail.addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.tab)});
+let startTab='synth';try{startTab=location.hash.replace('#','')||localStorage.getItem('gxt.tab')||'synth'}catch(e){}
+if(!document.getElementById('tab-'+startTab))startTab='synth';show(startTab);
+
+/* ---------- Stats (pure) ---------- */
+function erf(x){const s=x<0?-1:1;x=Math.abs(x);const t=1/(1+0.3275911*x);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y}
+const phi=z=>0.5*(1+erf(z/Math.SQRT2));
+function zq(p){if(p<=0)return -Infinity;if(p>=1)return Infinity;const a=[-3.969683028665376e+01,2.209460984245205e+02,-2.759285104469687e+02,1.383577518672690e+02,-3.066479806614716e+01,2.506628277459239e+00],b=[-5.447609879822406e+01,1.615858368580409e+02,-1.556989798598866e+02,6.680131188771972e+01,-1.328068155288572e+01],c=[-7.784894002430293e-03,-3.223964580411365e-01,-2.400758277161838e+00,-2.549732539343734e+00,4.374664141464968e+00,2.938163982698783e+00],d=[7.784695709041462e-03,3.224671290700398e-01,2.445134137142996e+00,3.754408661907416e+00];const pl=0.02425,ph=1-pl;let q,r;if(p<pl){q=Math.sqrt(-2*Math.log(p));return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)}if(p<=ph){q=p-0.5;r=q*q;return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q/(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1)}q=Math.sqrt(-2*Math.log(1-p));return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5])/((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1)}
+function lgamma(x){const g=7,c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];if(x<0.5)return Math.log(Math.PI/Math.sin(Math.PI*x))-lgamma(1-x);x-=1;let a=c[0];const t=x+g+0.5;for(let i=1;i<g+2;i++)a+=c[i]/(x+i);return 0.5*Math.log(2*Math.PI)+(x+0.5)*Math.log(t)-t+Math.log(a)}
+function gammainc(s,x){if(x<=0)return 0;if(x<s+1){let sum=1/s,term=1/s;for(let n=1;n<200;n++){term*=x/(s+n);sum+=term;if(Math.abs(term)<Math.abs(sum)*1e-12)break}return sum*Math.exp(-x+s*Math.log(x)-lgamma(s))}let b=x+1-s,c=1/1e-300,d=1/b,h=d;for(let i=1;i<200;i++){const an=-i*(i-s);b+=2;d=an*d+b;if(Math.abs(d)<1e-300)d=1e-300;c=b+an/c;if(Math.abs(c)<1e-300)c=1e-300;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<1e-12)break}return 1-Math.exp(-x+s*Math.log(x)-lgamma(s))*h}
+const chi2p=(stat,df)=>1-gammainc(df/2,stat/2);
+function srm(observed,intended){const total=observed.reduce((a,b)=>a+b,0),sumW=intended.reduce((a,b)=>a+b,0);let stat=0;observed.forEach((o,i)=>{const e=total*intended[i]/sumW;stat+=(o-e)*(o-e)/e});const p=chi2p(stat,observed.length-1);return{stat,p,fail:p<0.01}}
+function twoProp(cA,nA,cB,nB){const pA=cA/nA,pB=cB/nB,pool=(cA+cB)/(nA+nB);const se=Math.sqrt(pool*(1-pool)*(1/nA+1/nB));const z=se>0?(pB-pA)/se:0;const p=2*(1-phi(Math.abs(z)));const abs=pB-pA,rel=pA>0?abs/pA:0;const seRel=pA>0?Math.sqrt(pB*(1-pB)/nB/(pA*pA)+pB*pB*pA*(1-pA)/nA/Math.pow(pA,4)):0;return{pA,pB,abs,rel,z,p,ciLow:rel-1.96*seRel,ciHigh:rel+1.96*seRel}}
+function sampleSize(base,mdeRel,power,alpha,arms){const p1=base,p2=base*(1+mdeRel);const za=zq(1-alpha/2/Math.max(1,arms-1)),zb=zq(power);const n=Math.pow(za*Math.sqrt(2*((p1+p2)/2)*(1-(p1+p2)/2))+zb*Math.sqrt(p1*(1-p1)+p2*(1-p2)),2)/Math.pow(p2-p1,2);return Math.ceil(n)}
+function power(nPerArm,base,mdeRel,alpha=0.05){const p1=base,p2=base*(1+mdeRel);const se=Math.sqrt(p1*(1-p1)/nPerArm+p2*(1-p2)/nPerArm);const za=zq(1-alpha/2);return 1-phi(za-Math.abs(p2-p1)/se)+phi(-za-Math.abs(p2-p1)/se)}
+function holm(ps){const idx=ps.map((p,i)=>[p,i]).sort((a,b)=>a[0]-b[0]);const m=ps.length,out=new Array(m);let prev=0;idx.forEach(([p,i],k)=>{const adj=Math.min(1,Math.max(prev,(m-k)*p));out[i]=adj;prev=adj});return out}
+function annualise(relLow,relHigh,base,traffic,value){const conv=traffic*base;return{low:conv*relLow*value,high:conv*relHigh*value}}
+function peekSim(nPerArm,base,peeks,alpha,sims=2000){let fp=0;const checkpoints=[];for(let k=1;k<=peeks;k++)checkpoints.push(Math.round(nPerArm*k/peeks));for(let s=0;s<sims;s++){let cA=0,cB=0,n=0,hit=false;for(const cp of checkpoints){while(n<cp){if(Math.random()<base)cA++;if(Math.random()<base)cB++;n++}const r=twoProp(cA,n,cB,n);if(r.p<alpha){hit=true;break}}if(hit)fp++}return fp/sims}
+
+/* ---------- Store (db or localStorage) ---------- */
+const store={db:null,cache:{roadmap:[],learnings:[]},listeners:[]};
+function lsGet(k){try{return JSON.parse(localStorage.getItem('gxt.'+k)||'null')}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem('gxt.'+k,JSON.stringify(v))}catch(e){}}
+async function storeInit(){store.cache.roadmap=lsGet('roadmap')||[];store.cache.learnings=lsGet('learnings')||[];store.cache.history=lsGet('history')||[];emit();
+  try{const db=await window.claude?.use?.('db');if(db){store.db=db;$('storePill').textContent='Storage: shared';$('storePill').className='pill good';['roadmap','learnings','history'].forEach(k=>{db.doc('state/'+k).onSnapshot(snap=>{const d=snap.data();if(d&&Array.isArray(d.items)){store.cache[k]=d.items;emit()}},()=>{})});return}}catch(e){}
+  $('storePill').textContent='Storage: this browser';$('storePill').className='pill warn'}
+async function save(k,items){store.cache[k]=items;lsSet(k,items);emit();if(store.db){try{await store.db.doc('state/'+k).set({items,updatedAt:new Date().toISOString()})}catch(e){}}}
+function emit(){store.listeners.forEach(f=>f())}
+
+/* ---------- AI ---------- */
+let sampleFn=null;
+async function aiInit(){try{sampleFn=await window.claude?.use?.('sample')}catch(e){sampleFn=null}
+  if(sampleFn){$('aiPill').textContent='AI: ready';$('aiPill').className='pill good'}else{$('aiPill').textContent='AI: unavailable';$('aiPill').className='pill warn';['synthRun','auditRun','briefRun','varRun','rmNext','lnSummary','roRun'].forEach(id=>{$(id).disabled=true;$(id).title='AI is not available in this view'})}}
+async function askJSON(prompt,statusEl,tier='default'){if(!sampleFn)throw new Error('AI unavailable');statusEl.textContent='Thinking…';try{const v=await sampleFn.json(prompt,{modelTier:tier,cache:false});statusEl.textContent='';return v}catch(e){statusEl.textContent=e&&e.code==='rate_limited'?'Rate limited, wait a moment and try again.':'Something went wrong: '+(e.message||e.code||'unknown');throw e}}
+async function askText(prompt,statusEl,onText){if(!sampleFn)throw new Error('AI unavailable');statusEl.textContent='Writing…';try{const r=await sampleFn(prompt,{modelTier:'default',cache:false,onText:u=>onText&&onText(u.text)});statusEl.textContent='';return r.text}catch(e){statusEl.textContent='Something went wrong: '+(e.message||e.code||'unknown');throw e}}
+
+const METHOD_A=`You are a senior CRO / growth product manager. Apply this method exactly.
+1. Normalise: split the inputs into individual verbatims; keep source tags, ratings and dates. Drop duplicates.
+2. Cluster into 5-10 problem statements written as "[Who] struggles to [do what] because [root cause], which leads to [consequence]." Cluster by the failing job-to-be-done, never by surface topic.
+3. Score each cluster. frequency 1-5 by share of verbatims (<5%=1, 5-10%=2, 10-20%=3, 20-35%=4, >35%=5). severity 1-5 (5 blocks purchase/activation, 4 damages trust, 3 friction, 2 annoyance, 1 cosmetic). priority = frequency*severity.
+4. One hypothesis per cluster in exactly this form: "We believe that [change] for [segment] will [outcome] because [evidence]. We'll know this is true when [primary metric] moves by at least [MDE] with [guardrail metric] unchanged."
+5. ICE: impact, confidence, ease each 1-10. Name the persuasion or UX principle (social proof, loss aversion, progressive disclosure, anchoring, friction removal, message match, etc.).
+6. Tie every hypothesis to conversion, revenue per visitor, activation or retention. Mark clusters with fewer than 3 verbatims lowConfidence.
+Return ONLY JSON: {"clusters":[{"problem":"","frequency":1,"severity":1,"priority":1,"verbatims":["",""],"hypothesis":"","primaryMetric":"","guardrailMetric":"","ice":{"impact":1,"confidence":1,"ease":1},"principle":"","surface":"","segment":"","lowConfidence":false}],"firstTest":""}`;
+
+/* ---------- 1 Synthesise ---------- */
+let synthResult=null,selectedHyp=null;
+const SAMPLE_INPUTS=`[review 2★ 2026-07] The quiz took 15 minutes and then asked me to create an account before showing whether I even qualify
+[review 1★ 2026-06] Paid and then nothing. No email, no confirmation page, had to contact support to check the order went through
+[support 2026-07] Customer asked if they can pause the subscription during holiday, could not find it in the app
+[survey] I wasn't sure if the price shown was per month or for the whole programme
+[review 4★ 2026-08] Great coach, but the first week I had no idea when my medication would arrive
+[session note] User scrolled to pricing three times before starting the assessment, left without starting
+[review 3★ 2026-05] The eligibility questions asked my weight twice in different units
+[support 2026-06] Wants to know whether the GP needs to be involved, worried about side effects
+[review 5★ 2026-08] Lost 6kg in 8 weeks, the app check-ins kept me going
+[survey] Would have signed up sooner if I'd seen someone like me in the testimonials, they're all in their 20s
+[session note] Mobile: CTA below the fold on the landing page, user tapped the hero image twice
+[support 2026-07] Delivery arrived with no instructions on storage, not sure if fridge is needed
+[review 2★ 2026-07] Cancelled because the monthly cost went up after the first month and I didn't notice
+[review 1★ 2026-04] Got rejected after doing the whole assessment, no explanation why
+[survey] The comparison with other providers helped me decide, but it was buried under the FAQs
+[session note] User opened the live chat on the pricing page and asked 'is this the final price'
+[review 4★ 2026-08] Easy to use, wish the dietitian replies were faster at weekends
+[support 2026-08] Asked whether they can switch from one medication to the other mid-programme
+[review 3★ 2026-06] Felt like the ad promised a clinician would speak to me but the first week was all app messages
+[survey] I didn't know what happened after the quiz, whether a doctor reviews it or a computer
+[session note] Rage click on 'Continue' when the postcode field rejected a valid postcode with a space
+[review 2★ 2026-05] The before and after photos look fake, I almost didn't sign up
+[support 2026-07] Customer could not find how to upload the blood test result the clinician asked for
+[review 5★ 2026-07] Clear pricing, quick approval, medication came two days later`;
+$('synthSample').onclick=()=>{$('synthInput').value=SAMPLE_INPUTS};
+$('synthFile').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{$('synthInput').value=($('synthInput').value+'\n'+t).trim()})};
+$('synthRun').onclick=async()=>{const inp=$('synthInput').value.trim();if(!inp){$('synthStatus').textContent='Add some inputs first.';return}
+  const prompt=`${METHOD_A}\n\nCompany: ${$('synthCompany').value}\nInputs (one per line):\n${inp}`;
+  try{synthResult=await askJSON(prompt,$('synthStatus'));renderSynth();bank('synthesis',$('synthCompany').value,{company:$('synthCompany').value,inputs:inp,result:synthResult})}catch(e){}};
+function renderSynth(){const cl=(synthResult.clusters||[]).slice().sort((a,b)=>b.priority-a.priority);synthResult.clusters=cl;$('synthOut').classList.remove('hidden');
+  const nVerb=$('synthInput').value.split('\n').filter(l=>l.trim()).length;
+  $('synthStats').innerHTML=stat('Inputs',nVerb,'verbatims')+stat('Clusters',cl.length,'problem statements')+stat('Top priority',cl[0]?cl[0].priority:'–','frequency × severity')+stat('Low confidence',cl.filter(c=>c.lowConfidence).length,'clusters under 3 verbatims');
+  $('synthCards').innerHTML=cl.map((c,i)=>hypCard(c,i,'synth')).join('');$('synthFirst').textContent=synthResult.firstTest||''}
+function stat(k,v,d){return `<div class="stat"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span><span class="d">${esc(d)}</span></div>`}
+function iceTotal(c){return c.ice?(c.ice.impact+c.ice.confidence+c.ice.ease):0}
+function hypCard(c,i,src){const low=c.lowConfidence?'<span class="pill warn">Low confidence</span>':'';return `<div class="card" data-i="${i}" data-src="${src}"><div class="meta"><span class="pill accent">Priority ${esc(c.priority)}</span><span class="pill">F${esc(c.frequency)} × S${esc(c.severity)}</span><span class="pill">ICE ${iceTotal(c)}</span>${low}</div><div class="title">${esc(c.problem)}</div><div class="hyp">${esc(c.hypothesis)}</div>${(c.verbatims||[]).slice(0,3).map(v=>`<div class="verb">${esc(v)}</div>`).join('')}<div class="tags"><span class="tag">${esc(c.primaryMetric||'')}</span><span class="tag">${esc(c.principle||'')}</span>${c.surface?`<span class="tag">${esc(c.surface)}</span>`:''}</div><div class="foot"><div class="actions"><button class="btn small" data-act="brief">Draft brief</button><button class="btn small" data-act="variants">Variants</button></div><button class="btn small" data-act="roadmap">Add to roadmap</button></div></div>`}
+document.addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(!b)return;const card=b.closest('.card');const i=+card.dataset.i,src=card.dataset.src;const c=src==='synth'?synthResult.clusters[i]:src==='audit'?auditResult.issues[i]:null;if(!c)return;
+  if(b.dataset.act==='brief'){loadBrief(c);show('brief')}else if(b.dataset.act==='variants'){$('varHyp').value=c.hypothesis;show('variants')}else if(b.dataset.act==='roadmap'){addToRoadmap(c);b.textContent='Added';b.disabled=true}});
+function loadBrief(c){selectedHyp=c;$('briefHyp').value=c.hypothesis||'';$('briefSurface').value=c.surface||'';$('briefMetric').value=c.primaryMetric||'';$('briefGuard').value=c.guardrailMetric||''}
+$('synthCopy').onclick=()=>copy(synthMd());
+function synthMd(){if(!synthResult)return '';const rows=synthResult.clusters.map(c=>`| ${c.problem} | ${c.frequency} | ${c.severity} | ${c.priority} | ${c.hypothesis} | ${c.primaryMetric} | ${iceTotal(c)} |`).join('\n');return `# Research synthesis: ${$('synthCompany').value}\n\n| Problem | F | S | Priority | Hypothesis | Primary metric | ICE |\n|---|---|---|---|---|---|---|\n${rows}\n\n**Test first:** ${synthResult.firstTest}`}
+$('synthAddAll').onclick=()=>{synthResult.clusters.forEach(addToRoadmap);$('synthStatus').textContent='Added to roadmap.'};
+
+/* ---------- 2 Audit ---------- */
+let auditResult=null;
+$('auditSample').onclick=()=>{$('auditUrl').value='https://example-weightcare.com/start';$('auditAd').value='Lose up to 15% of your body weight with clinician-led care';$('auditCopy').value=`Take control of your weight
+Personalised medical weight loss, delivered to your door
+Start your free assessment
+Trusted by 50,000+ members
+How it works: 1. Take the quiz 2. Clinician review 3. Medication delivered
+From £149/month
+Our clinicians are registered with the GMC
+FAQs: Is it safe? Who is eligible? What if I don't qualify?
+Read our 4,000 reviews
+Join today`};
+$('auditRun').onclick=async()=>{const copyTxt=$('auditCopy').value.trim();if(!copyTxt){$('auditStatus').textContent='Paste the page copy first.';return}
+  const prompt=`You are a senior CRO specialist auditing a landing page from its copy. Score the page 1-10 on five fixed heuristics: clarity (can a first-time visitor say what this is and for whom within 5 seconds), friction (effort and uncertainty on the path to the CTA), trust (specific, verifiable credibility signals), urgency (reason to act now without manipulation), messageMatch (continuity with the ad or source message the visitor saw). Then list the 4-7 most important issues. For each issue: the heuristic it falls under, the evidence (quote the copy), a hypothesis in exactly this form: "We believe that [change] for [segment] will [outcome] because [evidence]. We'll know this is true when [primary metric] moves by at least [MDE] with [guardrail metric] unchanged.", a primaryMetric, guardrailMetric, ICE 1-10 each, principle, severity 1-5, frequency 1-5 (how many visitors it plausibly affects), priority=frequency*severity.
+Return ONLY JSON: {"scores":{"clarity":0,"friction":0,"trust":0,"urgency":0,"messageMatch":0},"issues":[{"heuristic":"","problem":"","verbatims":["quoted copy"],"hypothesis":"","primaryMetric":"","guardrailMetric":"","ice":{"impact":0,"confidence":0,"ease":0},"principle":"","surface":"landing page","frequency":0,"severity":0,"priority":0}]}
+URL: ${$('auditUrl').value}\nAd/source message: ${$('auditAd').value||'(not given)'}\nPage copy:\n${copyTxt}`;
+  try{auditResult=await askJSON(prompt,$('auditStatus'));auditResult.issues=(auditResult.issues||[]).sort((a,b)=>b.priority-a.priority);$('auditOut').classList.remove('hidden');const s=auditResult.scores||{};$('auditScores').innerHTML=['clarity','friction','trust','urgency','messageMatch'].map(k=>stat(k.replace('messageMatch','message match'),(s[k]??'–')+'/10','')).join('');$('auditCards').innerHTML=auditResult.issues.map((c,i)=>hypCard(c,i,'audit')).join('');bank('audit',$('auditUrl').value||'page audit',{url:$('auditUrl').value,ad:$('auditAd').value,copy:copyTxt,result:auditResult})}catch(e){}};
+
+/* ---------- 3 Calculator ---------- */
+function calcInputs(){return{base:+$('cBase').value/100,mde:+$('cMde').value/100,power:+$('cPower').value/100,alpha:+$('cAlpha').value/100,traffic:+$('cTraffic').value,arms:Math.max(2,+$('cArms').value||2)}}
+function calc(){const c=calcInputs();if(!(c.base>0&&c.mde>0&&c.traffic>0))return;const n=sampleSize(c.base,c.mde,c.power,c.alpha,c.arms);const total=n*c.arms;const days=Math.ceil(total/c.traffic);const absLift=c.base*c.mde;
+  $('calcStats').innerHTML=stat('Per arm',fmtN(n),'visitors')+stat('Total',fmtN(total),`${c.arms} arms`)+stat('Days to run',days,days<14?'under the 14-day floor':'at current traffic')+stat('Absolute lift sought',fmtPct(absLift,2),`${fmtPct(c.base,1)} → ${fmtPct(c.base*(1+c.mde),2)}`)+stat('Weeks',(days/7).toFixed(1),'aim for whole weeks');
+  $('pkPlanned').value=n;$('roPlanned').value=n;$('roMde').value=$('cMde').value;$('briefCalcNote').textContent=`From the calculator: ${fmtN(n)} per arm, about ${days} days at ${fmtN(c.traffic)} visitors a day, baseline ${fmtPct(c.base,1)}, MDE ${$('cMde').value}% relative, power ${$('cPower').value}%, α ${$('cAlpha').value}%.`;
+  drawCalcChart(c)}
+function drawCalcChart(c){const W=640,H=220,L=50,R=16,T=14,B=34;const mdes=[];for(let m=2;m<=30;m+=1)mdes.push(m);const pts=mdes.map(m=>({m,d:Math.ceil(sampleSize(c.base,m/100,c.power,c.alpha,c.arms)*c.arms/c.traffic)}));const maxD=Math.min(Math.max(...pts.map(p=>p.d)),365);const x=m=>L+(m-2)/(30-2)*(W-L-R),y=d=>T+(1-Math.min(d,maxD)/maxD)*(H-T-B);
+  let s='';const ticks=5;for(let i=0;i<=ticks;i++){const d=Math.round(maxD*i/ticks);s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(d)}" y2="${y(d)}"/><text x="${L-6}" y="${y(d)+4}" text-anchor="end">${d}</text>`}
+  [5,10,15,20,25,30].forEach(m=>{s+=`<text x="${x(m)}" y="${H-B+16}" text-anchor="middle">${m}%</text>`});
+  s+=`<text x="${(L+W-R)/2}" y="${H-4}" text-anchor="middle">minimum detectable effect (relative)</text><text transform="translate(12 ${(T+H-B)/2}) rotate(-90)" text-anchor="middle">days</text>`;
+  const path=pts.map((p,i)=>(i?'L':'M')+x(p.m).toFixed(1)+' '+y(p.d).toFixed(1)).join(' ');s+=`<path class="area" d="${path} L${x(30)} ${y(0)} L${x(2)} ${y(0)} Z"/><path class="line" d="${path}"/>`;
+  s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(14)}" y2="${y(14)}" style="stroke:var(--warn)"/>`;
+  const cur=pts.find(p=>p.m===Math.round(c.mde*100));if(cur){s+=`<circle class="mark" cx="${x(cur.m)}" cy="${y(cur.d)}" r="5"/><text x="${x(cur.m)+8}" y="${y(cur.d)-8}">${cur.d} days at ${cur.m}%</text>`}
+  $('calcChart').innerHTML=s}
+['cBase','cMde','cPower','cAlpha','cTraffic','cArms'].forEach(id=>$(id).addEventListener('input',calc));calc();
+
+/* ---------- 4 Brief ---------- */
+let briefMd='';
+$('briefRun').onclick=async()=>{const h=$('briefHyp').value.trim();if(!h){$('briefStatus').textContent='Write or pick a hypothesis first.';return}const c=calcInputs();const n=sampleSize(c.base,c.mde,c.power,c.alpha,c.arms);const days=Math.ceil(n*c.arms/c.traffic);
+  const prompt=`Write a pre-registered A/B test brief in Markdown. Be specific and commercial; no filler. Use exactly these H2 headings in order: Hypothesis; Change; Primary metric; Guardrail metrics; Pre-specified success criteria and decision rule; Pre-registered segments; Sample size and run time; Stop rule; Risks and dependencies; Owner and sign-off.
+Rules: the decision rule must name the MDE and say what happens if the CI includes zero, excludes zero but misses the MDE, or clears the MDE. Segments: at most three, each with a reason. Stop rule: no peeking before the planned sample unless a guardrail breaches; name the earliest valid read. Mark anything unknown as [TO CONFIRM].
+Hypothesis: ${h}\nSurface: ${$('briefSurface').value||'[TO CONFIRM]'}\nPrimary metric: ${$('briefMetric').value||'[TO CONFIRM]'}\nGuardrails: ${$('briefGuard').value||'[TO CONFIRM]'}\nCalculator: baseline ${fmtPct(c.base,2)}, MDE ${$('cMde').value}% relative, power ${$('cPower').value}%, alpha ${$('cAlpha').value}%, ${c.arms} arms, ${fmtN(n)} visitors per arm, ${fmtN(c.traffic)} visitors/day, ${days} days (round up to whole weeks, minimum 14 days).`;
+  $('briefOut').innerHTML='<p class="small">Writing…</p>';try{briefMd=await askText(prompt,$('briefStatus'),t=>{$('briefOut').innerHTML=md(t)});$('briefOut').innerHTML=md(briefMd);bank('brief',h,{hypothesis:h,markdown:briefMd})}catch(e){}};
+$('briefCopy').onclick=()=>copy(briefMd);
+$('briefToReadout').onclick=()=>{if(briefMd)$('roBrief').value=briefMd;else $('roBrief').value=$('briefHyp').value;show('readout')};
+
+/* ---------- 5 Variants ---------- */
+let variants=null;
+$('varRun').onclick=async()=>{const h=$('varHyp').value.trim();if(!h){$('varStatus').textContent='Add a hypothesis first.';return}
+  const prompt=`You are a direct-response copywriter working inside an experimentation programme. For the hypothesis below, write three variants, each with headline (max 9 words), subhead (max 18 words), cta (max 4 words). Each variant uses a different persuasion principle and targets a named segment. Give a one-line rationale. Then pick which to run first and why, in one sentence. No exclamation marks, no fake claims, no numbers that aren't in the hypothesis.
+Hypothesis: ${h}\nCurrent copy: ${$('varCurrent').value||'(not given)'}
+Return ONLY JSON: {"variants":[{"name":"A","headline":"","subhead":"","cta":"","principle":"","segment":"","rationale":""}],"runFirst":"A","why":""}`;
+  try{variants=await askJSON(prompt,$('varStatus'));renderVariants();$('varScreen').disabled=false;$('personaOut').classList.add('hidden');bank('variants',h,{hypothesis:h,result:variants})}catch(e){}};
+function renderVariants(){const v=variants.variants||[];$('varOut').classList.remove('hidden');$('varOut').innerHTML=`<table class="data"><thead><tr><th></th><th>Headline</th><th>Subhead</th><th>CTA</th><th>Principle</th><th>Segment</th><th>Rationale</th></tr></thead><tbody>${v.map(x=>`<tr><td><strong>${esc(x.name)}</strong>${variants.runFirst===x.name?' <span class="pill accent">Run first</span>':''}</td><td>${esc(x.headline)}</td><td>${esc(x.subhead)}</td><td>${esc(x.cta)}</td><td>${esc(x.principle)}</td><td>${esc(x.segment)}</td><td class="small">${esc(x.rationale)}</td></tr>`).join('')}</tbody></table><p class="small" style="margin-top:8px"><strong>Why ${esc(variants.runFirst)} first:</strong> ${esc(variants.why)}</p>`}
+$('varScreen').onclick=async()=>{if(!variants)return;const research=$('synthInput').value.trim().slice(0,6000)||'(no research inputs loaded; build personas from the hypothesis segment only and say so)';
+  const prompt=`Build 4 customer personas grounded ONLY in the research verbatims below (name, one-line situation, main anxiety, what would convince them). Then have each persona rank the variants 1-3 with a one-line reason in their voice. Give a combined ranking with the vote tally. Finish with a two-sentence caveat that this is a prioritisation filter and not evidence; the real test decides.
+Research verbatims:\n${research}\n\nVariants: ${JSON.stringify(variants.variants)}
+Return ONLY JSON: {"personas":[{"name":"","situation":"","anxiety":"","convincer":"","ranking":["A","B","C"],"reason":""}],"combined":[{"name":"A","points":0}],"caveat":""}`;
+  try{const r=await askJSON(prompt,$('varStatus'));$('personaOut').classList.remove('hidden');$('personaOut').innerHTML=`<h3>Persona pre-screen</h3><div class="summary-row">${(r.combined||[]).sort((a,b)=>b.points-a.points).map((c,i)=>`<span class="pill ${i===0?'accent':''}">${esc(c.name)}: ${esc(c.points)} pts</span>`).join('')}</div><div class="cards">${(r.personas||[]).map(p=>`<div class="card"><div class="title">${esc(p.name)}</div><div class="small">${esc(p.situation)}</div><div><strong>Anxiety:</strong> ${esc(p.anxiety)}</div><div><strong>Would convince them:</strong> ${esc(p.convincer)}</div><div class="meta">${(p.ranking||[]).map((v,i)=>`<span class="pill ${i===0?'good':''}">${i+1}. ${esc(v)}</span>`).join('')}</div><div class="verb">${esc(p.reason)}</div></div>`).join('')}</div><p class="note">${esc(r.caveat)}</p>`}catch(e){}};
+
+/* ---------- 6 Roadmap ---------- */
+const STATUSES=['idea','briefed','building','running','concluded'];
+function addToRoadmap(c){const items=store.cache.roadmap.slice();items.push({id:uid(),problem:c.problem,hypothesis:c.hypothesis,primaryMetric:c.primaryMetric||'',guardrailMetric:c.guardrailMetric||'',principle:c.principle||'',surface:c.surface||'',segment:c.segment||'',ice:c.ice||{impact:5,confidence:5,ease:5},priority:c.priority||0,status:'idea',created:new Date().toISOString()});save('roadmap',items)}
+function renderRoadmap(){const items=store.cache.roadmap;$('kanban').innerHTML=STATUSES.map(s=>{const its=items.filter(i=>i.status===s).sort((a,b)=>iceTotal(b)-iceTotal(a));return `<div class="col"><h3>${s}<span>${its.length}</span></h3>${its.map(i=>`<div class="card" data-id="${i.id}"><div class="meta"><span class="pill accent">ICE ${iceTotal(i)}</span><span class="pill">I${i.ice.impact} C${i.ice.confidence} E${i.ice.ease}</span></div><div class="hyp">${esc(i.hypothesis)}</div><div class="tags">${i.surface?`<span class="tag">${esc(i.surface)}</span>`:''}${i.principle?`<span class="tag">${esc(i.principle)}</span>`:''}</div><div class="foot"><select data-move="${i.id}">${STATUSES.map(x=>`<option ${x===i.status?'selected':''}>${x}</option>`).join('')}</select><div class="actions"><button class="btn small" data-rm-brief="${i.id}">Brief</button><button class="btn small" data-rm-del="${i.id}">×</button></div></div></div>`).join('')||'<p class="small">Nothing here</p>'}</div>`}).join('')}
+store.listeners.push(renderRoadmap);
+$('kanban').addEventListener('change',e=>{const id=e.target.dataset.move;if(!id)return;const items=store.cache.roadmap.map(i=>i.id===id?{...i,status:e.target.value}:i);save('roadmap',items)});
+$('kanban').addEventListener('click',e=>{const d=e.target.closest('[data-rm-del]'),b=e.target.closest('[data-rm-brief]');if(d){save('roadmap',store.cache.roadmap.filter(i=>i.id!==d.dataset.rmDel))}if(b){const i=store.cache.roadmap.find(x=>x.id===b.dataset.rmBrief);if(i){loadBrief(i);show('brief')}}});
+$('rmClear').onclick=()=>{if($('rmClear').textContent==='Really clear?'){save('roadmap',[]);$('rmClear').textContent='Clear board'}else{$('rmClear').textContent='Really clear?';setTimeout(()=>$('rmClear').textContent='Clear board',3000)}};
+$('rmAdd').onclick=()=>{const h=window.promptFallback('Hypothesis','We believe that …');if(!h)return;addToRoadmap({problem:'',hypothesis:h,ice:{impact:5,confidence:5,ease:5}})};
+window.promptFallback=function(label,ph){const v=$('briefHyp').value.trim();if(v)return v;show('brief');$('briefStatus').textContent='Write the hypothesis here, then press "Add hypothesis by hand" again on the roadmap.';return ''};
+$('rmNext').onclick=async()=>{const open=store.cache.roadmap.filter(i=>i.status==='idea'||i.status==='briefed');if(!open.length){$('rmStatus').textContent='No open hypotheses on the board.';return}
+  const scored=open.map(i=>({...i,risk:i.ice.impact*(11-i.ice.confidence),cheap:i.ice.ease})).sort((a,b)=>(b.risk*b.cheap)-(a.risk*a.cheap));
+  const prompt=`You are sequencing an experimentation roadmap. Method: test the riskiest assumptions first (high impact, low confidence), validate cheaply before committing to big builds (high ease first among similar risk), and avoid running two tests on the same surface at once. Pre-computed risk score = impact*(11-confidence). Explain the recommended order for the top 3 in plain, specific sentences a stakeholder would accept, then one line on what you deliberately deferred and why. Max 140 words. Plain prose, no bullets.
+Hypotheses: ${JSON.stringify(scored.map(i=>({hypothesis:i.hypothesis,surface:i.surface,impact:i.ice.impact,confidence:i.ice.confidence,ease:i.ice.ease,risk:i.risk})))}`;
+  try{const t=await askText(prompt,$('rmStatus'));$('rmNextOut').classList.remove('hidden');$('rmNextOut').innerHTML=`<strong>Next up:</strong> ${esc(scored[0].hypothesis)}<br><br>${esc(t)}`}catch(e){}};
+
+/* ---------- 7 Peeking guard ---------- */
+(function(){const d=new Date();d.setDate(d.getDate()-9);$('pkStart').value=d.toISOString().slice(0,10)})();
+$('pkRun').onclick=()=>{const nA=+$('pkNa').value,cA=+$('pkCa').value,nB=+$('pkNb').value,cB=+$('pkCb').value,planned=+$('pkPlanned').value,peeks=Math.max(0,+$('pkPeeks').value),alpha=calcInputs().alpha;if(!(nA>0&&nB>0)){return}
+  const r=twoProp(cA,nA,cB,nB);const prog=planned>0?Math.min(nA,nB)/planned:0;const start=new Date($('pkStart').value||Date.now());const daysIn=Math.max(1,Math.round((Date.now()-start)/864e5));const rate=Math.min(nA,nB)/daysIn;const daysNeeded=planned>0?Math.ceil(planned/rate):0;const earliest=new Date(start);earliest.setDate(earliest.getDate()+Math.max(14,daysNeeded));
+  const s=srm([nA,nB],[1,1]);const base=cA/nA;const fpr=planned>0?peekSim(Math.min(planned,20000),base||0.03,Math.max(1,peeks),alpha,800):NaN;
+  $('pkStats').innerHTML=stat('Progress',planned?Math.round(prog*100)+'%':'–','of planned sample per arm')+stat('Current lift',(r.rel*100).toFixed(1)+'%',`95% CI ${(r.ciLow*100).toFixed(1)}% to ${(r.ciHigh*100).toFixed(1)}%`)+stat('p-value now',r.p.toFixed(3),'not valid before planned sample')+stat('Earliest valid read',earliest.toISOString().slice(0,10),`${Math.max(14,daysNeeded)} days from start`)+stat('SRM',s.fail?'FAIL':'OK',`χ² p = ${s.p.toFixed(3)}`)+stat('False-positive rate if you peek',isNaN(fpr)?'–':(fpr*100).toFixed(0)+'%',`${peeks} peeks vs ${Math.round(alpha*100)}% promised`);
+  const ok=prog>=1&&daysIn>=14;const verdict=$('pkVerdict');verdict.classList.remove('hidden');
+  verdict.innerHTML=ok?`<span class="pill good">Valid to read</span><p style="margin-top:8px">Planned sample reached and at least two full weeks have run. Read the result against the decision rule in the brief.</p>`:`<span class="pill bad">Not yet</span><p style="margin-top:8px">${prog<1?`You are at ${Math.round(prog*100)}% of the planned sample. `:''}${daysIn<14?`Only ${daysIn} days have run; a weekday-to-weekend cycle needs 14. `:''}The p-value shown is what a stakeholder will quote at you; the honest answer is that at this point the interval runs from ${(r.ciLow*100).toFixed(1)}% to ${(r.ciHigh*100).toFixed(1)}%, which ${r.ciLow<0&&r.ciHigh>0?'includes zero':'has not been earned yet'}. Calling it now ${isNaN(fpr)?'inflates':`turns a ${Math.round(alpha*100)}% false-positive rate into roughly ${(fpr*100).toFixed(0)}%`}.${s.fail?' <strong>SRM failed: the split is not what was intended; investigate before anything else.</strong>':''}</p>`;
+  drawPeekChart(base||0.03,Math.min(planned||10000,20000),alpha)};
+function drawPeekChart(base,n,alpha){const W=640,H=200,L=50,R=16,T=14,B=34;const ks=[1,2,3,5,8,12,20];const vals=ks.map(k=>peekSim(n,base,k,alpha,600));const maxV=Math.max(0.35,...vals);const bw=(W-L-R)/ks.length;const y=v=>T+(1-v/maxV)*(H-T-B);let s='';[0,.1,.2,.3].forEach(v=>{if(v<=maxV)s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${Math.round(v*100)}%</text>`});
+  s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(alpha)}" y2="${y(alpha)}" style="stroke:var(--warn)"/><text x="${W-R}" y="${y(alpha)-4}" text-anchor="end">promised α</text>`;
+  ks.forEach((k,i)=>{const x=L+i*bw+bw*0.2;s+=`<rect class="bar" x="${x}" y="${y(vals[i])}" width="${bw*0.6}" height="${y(0)-y(vals[i])}" rx="2"/><text x="${x+bw*0.3}" y="${y(vals[i])-5}" text-anchor="middle">${Math.round(vals[i]*100)}%</text><text x="${x+bw*0.3}" y="${H-B+16}" text-anchor="middle">${k}</text>`});
+  s+=`<text x="${(L+W-R)/2}" y="${H-4}" text-anchor="middle">number of peeks before the planned sample</text>`;$('pkChart').innerHTML=s}
+
+/* ---------- 8 Read-out ---------- */
+let roComputed=null,roMd='';
+function armRow(name='',n='',c=''){return `<div class="arm"><div class="field"><label>Arm</label><input class="armName" value="${esc(name)}" placeholder="Control"></div><div class="field"><label>Visitors</label><input class="armN" type="number" value="${esc(n)}"></div><div class="field"><label>Conversions</label><input class="armC" type="number" value="${esc(c)}"></div><button class="btn small armDel" type="button">Remove</button></div>`}
+function setArms(list){$('roArms').innerHTML=list.map(a=>armRow(a.name,a.n,a.c)).join('')}
+setArms([{name:'Control',n:'',c:''},{name:'Variant A',n:'',c:''}]);
+$('roAddArm').onclick=()=>$('roArms').insertAdjacentHTML('beforeend',armRow('Variant '+String.fromCharCode(64+$('roArms').children.length),'',''));
+$('roArms').addEventListener('click',e=>{if(e.target.classList.contains('armDel')&&$('roArms').children.length>2)e.target.closest('.arm').remove()});
+function getArms(){return [...$('roArms').querySelectorAll('.arm')].map(a=>({name:a.querySelector('.armName').value||'Arm',n:+a.querySelector('.armN').value,c:+a.querySelector('.armC').value}))}
+$('roCsv').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{const rows=t.split(/\r?\n/).filter(l=>l.trim()).map(l=>l.split(/[\t,;]/).map(x=>x.replace(/^"|"$/g,'').trim()));if(rows.length<2){$('roCsvStatus').textContent='Could not read any rows.';return}const head=rows[0].map(h=>h.toLowerCase());const find=re=>head.findIndex(h=>re.test(h));const iName=find(/variation|variant|arm|experience|name|group/),iN=find(/visitor|user|session|sample|impression|participant/),iC=find(/conversion|convert|goal|complete|purchase|click/);if(iN<0||iC<0){$('roCsvStatus').textContent='Could not find visitor and conversion columns; expected headers like "Visitors" and "Conversions".';return}const arms=rows.slice(1).map(r=>({name:iName>=0?r[iName]:'Arm',n:+String(r[iN]).replace(/[^\d.]/g,''),c:+String(r[iC]).replace(/[^\d.]/g,'')})).filter(a=>a.n>0);setArms(arms);$('roCsvStatus').textContent=`Imported ${arms.length} arms from ${f.name}.`})};
+$('roSample').onclick=()=>{$('roBrief').value=`## Hypothesis\nWe believe that showing the clinician review step and expected timing on the assessment start page for first-time visitors from paid social will increase assessment completion because verbatims show uncertainty about what happens after the quiz. We'll know this is true when assessment completion rate moves by at least 10% relative with support contacts per start unchanged.\n\n## Primary metric\nAssessment completion rate (started → submitted)\n\n## Decision rule\nShip if the 95% CI on relative lift excludes zero and the point estimate is at or above 10%. Iterate if the CI excludes zero but the estimate is below 10%. Don't ship if the CI includes zero at the planned sample. Inconclusive only if the test could not reach the planned sample.\n\n## Sample and run time\n49,800 per arm, 14 days at ~7,100 visitors/day. Baseline 3.2%, MDE 10% relative, power 80%, α 5%.\n\n## Guardrails\nSupport contacts per assessment start; refund rate within 14 days.\n\n## Pre-registered segments\nMobile vs desktop; paid social vs organic.`;
+  const s=new Date();s.setDate(s.getDate()-18);const e=new Date();e.setDate(e.getDate()-4);$('roStart').value=s.toISOString().slice(0,10);$('roEnd').value=e.toISOString().slice(0,10);$('roPlanned').value=49800;$('roMde').value=10;$('roSplit').value='50/50';setArms([{name:'Control',n:49912,c:1597},{name:'Variant A',n:49760,c:1702}]);$('roGuard').value='Support contacts per start, 1.8%, 1.9%, pass\nRefund rate 14d, 2.4%, 2.3%, pass';$('roDev').value='Tracking gap of ~4 hours on day 3 (both arms). Paid social spend up 30% from day 9, same split. Segments: mobile +9.1% (CI −1.2% to +19.4%), desktop +3.0% (CI −8.5% to +14.5%). Sample test (synthetic data).';$('roStatus').textContent='Sample loaded. This is synthetic data.'};
+function computeRO(){const arms=getArms().filter(a=>a.n>0);if(arms.length<2){$('roStatus').textContent='Need at least two arms with visitors.';return null}const split=$('roSplit').value.split('/').map(Number).filter(x=>x>0);const intended=split.length===arms.length?split:arms.map(()=>1);const s=srm(arms.map(a=>a.n),intended);const ctrl=arms[0];const comps=arms.slice(1).map(a=>({name:a.name,...twoProp(ctrl.c,ctrl.n,a.c,a.n)}));const adj=holm(comps.map(c=>c.p));comps.forEach((c,i)=>c.pAdj=adj[i]);const mde=+$('roMde').value/100;const planned=+$('roPlanned').value;const base=ctrl.c/ctrl.n;const pw=planned>0?power(Math.min(...arms.map(a=>a.n)),base,mde):NaN;const main=comps[0];const traffic=+$('roTraffic').value,value=+$('roValue').value;const ann=annualise(main.ciLow,main.ciHigh,base,traffic,value);const start=$('roStart').value,end=$('roEnd').value;const days=start&&end?Math.round((new Date(end)-new Date(start))/864e5):null;
+  let verdict,vclass;if(s.fail)verdict='Suspect (SRM)',vclass='bad';else if(main.ciLow>0&&main.rel>=mde)verdict='Ship',vclass='good';else if(main.ciLow>0)verdict='Iterate',vclass='warn';else if(planned>0&&Math.min(...arms.map(a=>a.n))<planned*0.9)verdict='Inconclusive',vclass='warn';else verdict="Don't ship",vclass='bad';
+  roComputed={arms,srm:s,comps,base,mde,planned,power:pw,annual:ann,days,verdict,vclass,minN:Math.min(...arms.map(a=>a.n))};
+  $('roStatStrip').innerHTML=`<div class="stat"><span class="k">Verdict (by rule)</span><span class="v"><span class="pill ${vclass}">${esc(verdict)}</span></span><span class="d">decision rule applied to the numbers</span></div>`+stat('Relative lift',(main.rel*100).toFixed(2)+'%',`95% CI ${(main.ciLow*100).toFixed(2)}% to ${(main.ciHigh*100).toFixed(2)}%`)+stat('p-value',main.p.toFixed(4),comps.length>1?`Holm-adjusted ${main.pAdj.toFixed(4)}`:'two-sided z-test')+stat('SRM',s.fail?'FAIL':'OK',`χ² ${s.stat.toFixed(2)}, p = ${s.p.toFixed(3)}`)+stat('Sample vs plan',planned?Math.round(roComputed.minN/planned*100)+'%':'–',`${fmtN(roComputed.minN)} smallest arm${days!==null?`, ${days} days`:''}`)+stat('Power achieved',isNaN(pw)?'–':Math.round(pw*100)+'%',`for MDE ${Math.round(mde*100)}%`)+stat('Annualised',`£${fmtN(ann.low)} to £${fmtN(ann.high)}`,'at CI bounds, not the point');
+  return roComputed}
+$('roStats').onclick=computeRO;
+$('roRun').onclick=async()=>{const r=computeRO();if(!r)return;const brief=$('roBrief').value.trim()||'[MISSING: no brief supplied; reconstruct and label as not pre-registered]';const main=r.comps[0];
+  const prompt=`Write an experiment read-out in Markdown using EXACTLY these H2 headings in order: Headline; What actually ran; Results; Interpretation; Decision and next steps; Learnings to log; Appendix.
+Rules: Headline is max 5 lines: one-line verdict (Ship / Don't ship / Iterate / Inconclusive) with the action, then the brief restated in two lines (hypothesis, primary metric, MDE, decision rule). Lead every result with the interval, e.g. "+2.1% (95% CI −0.4% to +4.6%)". Mark guardrails passed or breached. Only pre-registered segments count; anything else goes under a sub-heading "Exploratory (not pre-registered)" as future hypotheses. Carry the CI through to the annualised value. If the verdict deviates from the decision rule, say so explicitly. Under "Learnings to log" give 2-4 one-line learnings about users (not about the variant), each on its own line starting with "- " and ending with tags in square brackets like [surface: assessment] [principle: progressive disclosure] [segment: mobile] [outcome: win|loss|flat]. Never invent numbers; use only those supplied; mark gaps [MISSING: ...]. Plain, specific, commercial prose. A clean null is a valid outcome and goes in line one.
+Computed statistics (authoritative; do not recalculate): ${JSON.stringify({verdictByRule:r.verdict,arms:r.arms,srm:{chi2:+r.srm.stat.toFixed(3),p:+r.srm.p.toFixed(4),fail:r.srm.fail},baselineRate:+(r.base*100).toFixed(3)+'%',primary:{variant:main.name,controlRate:+(main.pA*100).toFixed(3)+'%',variantRate:+(main.pB*100).toFixed(3)+'%',absoluteLiftPts:+(main.abs*100).toFixed(3),relativeLift:+(main.rel*100).toFixed(2)+'%',ci95:[+(main.ciLow*100).toFixed(2)+'%',+(main.ciHigh*100).toFixed(2)+'%'],p:+main.p.toFixed(4),pHolm:+main.pAdj.toFixed(4)},otherArms:r.comps.slice(1).map(c=>({name:c.name,relativeLift:+(c.rel*100).toFixed(2)+'%',ci95:[+(c.ciLow*100).toFixed(2)+'%',+(c.ciHigh*100).toFixed(2)+'%'],pHolm:+c.pAdj.toFixed(4)})),mde:Math.round(r.mde*100)+'% relative',plannedPerArm:r.planned,smallestArm:r.minN,powerAchieved:isNaN(r.power)?null:Math.round(r.power*100)+'%',daysRun:r.days,annualisedValueGBP:{atCiLow:Math.round(r.annual.low),atCiHigh:Math.round(r.annual.high)}})}
+Dates: ${$('roStart').value||'[MISSING]'} to ${$('roEnd').value||'[MISSING]'}\nGuardrails: ${$('roGuard').value||'[MISSING: none supplied]'}\nDeviations, overlaps, segments: ${$('roDev').value||'none reported'}\n\nOriginal brief:\n${brief}`;
+  $('roOut').innerHTML='<p class="small">Writing…</p>';try{roMd=await askText(prompt,$('roStatus'),t=>{$('roOut').innerHTML=md(t)});$('roOut').innerHTML=md(roMd);extractLearnings(roMd);bank('readout',r.verdict+': '+(brief.match(/We believe that[^.]*\./)||['read-out'])[0].slice(0,110),{brief,arms:r.arms,markdown:roMd,strip:$('roStatStrip').innerHTML})}catch(e){}};
+$('roCopy').onclick=()=>copy(roMd);
+let pendingLearnings=[];
+function extractLearnings(text){const sec=text.split(/^## Learnings to log/m)[1];if(!sec)return;const lines=sec.split(/^## /m)[0].split('\n').filter(l=>/^\s*[-*] /.test(l));pendingLearnings=lines.map(l=>{const body=l.replace(/^\s*[-*] /,'');const tags={};body.replace(/\[(\w+):\s*([^\]]+)\]/g,(m,k,v)=>{tags[k]=v.trim();return ''});return{id:uid(),text:body.replace(/\s*\[[^\]]+\]/g,'').trim(),surface:tags.surface||'',principle:tags.principle||'',segment:tags.segment||'',outcome:tags.outcome||'',date:new Date().toISOString().slice(0,10),test:($('roBrief').value.match(/We believe that[^.]*\./)||[''])[0].slice(0,120)}}).filter(l=>l.text);
+  if(pendingLearnings.length){$('roLearn').classList.remove('hidden');$('roLearnList').innerHTML=pendingLearnings.map(l=>`<span class="tag">${esc(l.text)}</span>`).join('')}}
+$('roLearnSave').onclick=()=>{save('learnings',store.cache.learnings.concat(pendingLearnings));$('roLearnSave').textContent='Saved';$('roLearnSave').disabled=true;setTimeout(()=>{$('roLearnSave').textContent='Save to library';$('roLearnSave').disabled=false},2000)};
+
+/* ---------- 9 Learnings ---------- */
+function renderLearnings(){const q=$('lnSearch').value.toLowerCase();const items=store.cache.learnings.filter(l=>!q||JSON.stringify(l).toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));$('lnTable').innerHTML=items.length?`<table class="data"><thead><tr><th>Date</th><th>Learning</th><th>Surface</th><th>Principle</th><th>Segment</th><th>Outcome</th><th></th></tr></thead><tbody>${items.map(l=>`<tr><td class="mono">${esc(l.date)}</td><td>${esc(l.text)}<div class="small">${esc(l.test||'')}</div></td><td>${esc(l.surface)}</td><td>${esc(l.principle)}</td><td>${esc(l.segment)}</td><td><span class="pill ${l.outcome==='win'?'good':l.outcome==='loss'?'bad':''}">${esc(l.outcome||'–')}</span></td><td><button class="btn small" data-ln-del="${l.id}">×</button></td></tr>`).join('')}</tbody></table>`:'<p class="small">No learnings yet. They arrive from each read-out, or add one by hand.</p>'}
+store.listeners.push(renderLearnings);$('lnSearch').addEventListener('input',renderLearnings);
+$('lnTable').addEventListener('click',e=>{const b=e.target.closest('[data-ln-del]');if(b)save('learnings',store.cache.learnings.filter(l=>l.id!==b.dataset.lnDel))});
+$('lnAdd').onclick=()=>{const t=$('lnSearch').value.trim();if(!t){$('lnSummaryOut').classList.remove('hidden');$('lnSummaryOut').textContent='Type the learning into the search box (tags optional, e.g. "[surface: checkout] [principle: trust] [outcome: win]") then press Add.';return}const tags={};const text=t.replace(/\[(\w+):\s*([^\]]+)\]/g,(m,k,v)=>{tags[k]=v.trim();return ''}).trim();save('learnings',store.cache.learnings.concat([{id:uid(),text,surface:tags.surface||'',principle:tags.principle||'',segment:tags.segment||'',outcome:tags.outcome||'',date:new Date().toISOString().slice(0,10),test:''}]));$('lnSearch').value=''};
+$('lnSummary').onclick=async()=>{const items=store.cache.learnings;if(!items.length){$('lnSummaryOut').classList.remove('hidden');$('lnSummaryOut').textContent='Nothing to summarise yet.';return}
+  const prompt=`Summarise patterns across these experiment learnings in 3-5 plain sentences of the form "X has won N of M times on Y, never on Z". Count carefully from the data; do not invent counts. Then one sentence on the biggest gap in what has been tested. No bullets.\n${JSON.stringify(items.map(l=>({text:l.text,surface:l.surface,principle:l.principle,segment:l.segment,outcome:l.outcome})))}`;
+  try{const t=await askText(prompt,$('rmStatus'));$('lnSummaryOut').classList.remove('hidden');$('lnSummaryOut').textContent=t}catch(e){}};
+
+
+/* ---------- 10 History ---------- */
+function bank(kind,title,payload){const items=[{id:uid(),kind,title:String(title||'').slice(0,140),at:new Date().toISOString(),payload}].concat(store.cache.history).slice(0,200);save('history',items)}
+function renderHistory(){const q=($('hsSearch').value||'').toLowerCase();const items=store.cache.history.filter(h=>!q||(h.kind+' '+h.title+' '+h.at).toLowerCase().includes(q));$('hsTable').innerHTML=items.length?`<table class="data"><thead><tr><th>When</th><th>Kind</th><th>Title</th><th></th></tr></thead><tbody>${items.map(h=>`<tr><td class="mono">${esc(h.at.replace('T',' ').slice(0,16))}</td><td><span class="pill accent">${esc(h.kind)}</span></td><td>${esc(h.title)}</td><td class="actions"><button class="btn small" data-hs-open="${h.id}">Reopen</button><button class="btn small" data-hs-del="${h.id}">×</button></td></tr>`).join('')}</tbody></table>`:'<p class="small">Nothing banked yet. Runs from every tool land here automatically.</p>'}
+store.listeners.push(renderHistory);$('hsSearch').addEventListener('input',renderHistory);
+$('hsTable').addEventListener('click',e=>{const d=e.target.closest('[data-hs-del]'),o=e.target.closest('[data-hs-open]');if(d)save('history',store.cache.history.filter(h=>h.id!==d.dataset.hsDel));if(o){const h=store.cache.history.find(x=>x.id===o.dataset.hsOpen);if(h)reopen(h)}});
+$('hsClear').onclick=()=>{if($('hsClear').textContent==='Really clear?'){save('history',[]);$('hsClear').textContent='Clear history'}else{$('hsClear').textContent='Really clear?';setTimeout(()=>$('hsClear').textContent='Clear history',3000)}};
+function reopen(h){const p=h.payload||{};switch(h.kind){
+  case 'synthesis':$('synthCompany').value=p.company||'';$('synthInput').value=p.inputs||'';synthResult=p.result;renderSynth();show('synth');break;
+  case 'audit':$('auditUrl').value=p.url||'';$('auditAd').value=p.ad||'';$('auditCopy').value=p.copy||'';auditResult=p.result;$('auditOut').classList.remove('hidden');const sc=auditResult.scores||{};$('auditScores').innerHTML=['clarity','friction','trust','urgency','messageMatch'].map(k=>stat(k.replace('messageMatch','message match'),(sc[k]??'–')+'/10','')).join('');$('auditCards').innerHTML=auditResult.issues.map((c,i)=>hypCard(c,i,'audit')).join('');show('audit');break;
+  case 'brief':$('briefHyp').value=p.hypothesis||'';briefMd=p.markdown||'';$('briefOut').innerHTML=md(briefMd);show('brief');break;
+  case 'variants':$('varHyp').value=p.hypothesis||'';variants=p.result;renderVariants();$('varScreen').disabled=false;show('variants');break;
+  case 'readout':$('roBrief').value=p.brief||'';if(p.arms)setArms(p.arms);roMd=p.markdown||'';$('roOut').innerHTML=md(roMd);if(p.strip)$('roStatStrip').innerHTML=p.strip;show('readout');break;}}
+
+/* ---------- Helpers ---------- */
+function copy(text){if(!text)return;navigator.clipboard.writeText(text).then(()=>flash('Copied')).catch(()=>{const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');flash('Copied')}catch(e){flash('Select and copy manually')}ta.remove()})}
+function flash(msg){const el=document.createElement('div');el.textContent=msg;el.style.cssText='position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:6px 14px;border-radius:999px;font-size:13px;z-index:9';document.body.appendChild(el);setTimeout(()=>el.remove(),1400)}
+function md(t){const lines=String(t||'').split('\n');let out='',inList=false,inTable=false,tbl=[];const inline=s=>esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/\*(.+?)\*/g,'<em>$1</em>');const flushTable=()=>{if(!tbl.length)return;const rows=tbl.filter(r=>!/^\|?\s*:?-{2,}/.test(r));const cells=r=>r.replace(/^\||\|$/g,'').split('|').map(c=>inline(c.trim()));out+='<div class="tablewrap"><table>'+rows.map((r,i)=>`<tr>${cells(r).map(c=>i?`<td>${c}</td>`:`<th>${c}</th>`).join('')}</tr>`).join('')+'</table></div>';tbl=[]};
+  for(const raw of lines){const l=raw.trimEnd();if(/^\|/.test(l)){tbl.push(l);inTable=true;continue}else if(inTable){flushTable();inTable=false}
+    const li=l.match(/^\s*[-*] (.*)/);if(li){if(!inList){out+='<ul>';inList=true}out+=`<li>${inline(li[1])}</li>`;continue}else if(inList){out+='</ul>';inList=false}
+    const h=l.match(/^(#{1,3}) (.*)/);if(h){out+=`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`;continue}
+    if(!l.trim())continue;out+=`<p>${inline(l)}</p>`}
+  if(inList)out+='</ul>';if(inTable)flushTable();return out}
+
+storeInit();aiInit();
+})();
+</script>
+</body>
+</html>
