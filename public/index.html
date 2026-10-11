@@ -124,6 +124,9 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
 .chip button:focus-visible{outline:2px solid var(--accent)}
 .previews{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
 .previews iframe{width:100%;height:460px;border:1px solid var(--line);border-radius:6px;background:#fff}
+.changes{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.changes li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:start}
+.changes .tag{white-space:nowrap}
 code.diff{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-word;display:block;max-height:120px;overflow:auto}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
 </style>
@@ -250,20 +253,22 @@ code.diff{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break
 
 <!-- 5 VARIANTS -->
 <section class="tool" id="tab-variants">
-  <div class="intro"><h2>Variants and persona pre-screen</h2><p>Three copy variants per hypothesis for headline, subhead and CTA, each tagged with its principle and segment. The persona pre-screen ranks them using personas grounded in the research inputs. It is a prioritisation filter, never a substitute for the test. Link the variants to a test idea so they stay with its brief, then build the variant page from the control's HTML.</p></div>
+  <div class="intro"><h2>Variants and persona pre-screen</h2><p>Three variants per hypothesis. A variant is a set of changes to the page: new copy, changes to existing elements, new elements, or a redesign of a section or the whole page. Each is tagged with its principle, segment and effort. The persona pre-screen ranks them using personas grounded in the research inputs; it is a prioritisation filter, never a substitute for the test. Link the variants to a test idea so they stay with its brief, then build the variant page from the control's HTML.</p></div>
   <div class="panel">
     <div class="field"><label for="varHyp">Hypothesis</label><textarea id="varHyp" style="min-height:80px"></textarea></div>
     <div class="row"><div class="field"><label for="varIdea">Linked test idea (output from this tool saves to it)</label><select class="ideaSel" id="varIdea"></select></div><div class="actions"><button class="btn small" data-save-idea="variants">Save as new idea</button></div></div>
-    <div class="row"><div class="field"><label for="varCurrent">Current headline / subhead / CTA (optional)</label><input id="varCurrent" placeholder="Start your assessment | Clinician-led weight care | Get started"></div></div>
+    <div class="row"><div class="field" style="flex:0 1 300px"><label for="varDepth">Depth of change</label><select id="varDepth"><option value="mixed">Mixed: one light, one medium, one bold</option><option value="copy">Copy only</option><option value="elements">Copy and changes to existing elements</option><option value="new">New elements added to the page</option><option value="redesign">Whole-page redesigns</option></select></div><div class="field"><label for="varCurrent">Current headline / subhead / CTA (optional)</label><input id="varCurrent" placeholder="Start your assessment | Clinician-led weight care | Get started"></div></div>
+    <p class="small">If a control page is uploaded below, the variants are written against what is actually on it.</p>
     <div class="actions"><button class="btn primary" id="varRun">Generate variants</button><button class="btn" id="varScreen" disabled>Pre-screen with personas</button><span class="status" id="varStatus"></span></div>
   </div>
-  <div class="tablewrap panel hidden" id="varOut"></div>
+  <div class="panel hidden" id="varOut"></div>
   <div class="panel hidden" id="personaOut"></div>
   <div class="panel">
     <h3>Build the variant page from the control</h3>
-    <p class="small">Upload the control page's HTML. Claude edits it to apply the hypothesis above, the brief (the linked idea's saved brief, or the one in the Brief tab) and the copy variant you pick. You get a change list and the edited page.</p>
+    <p class="small">Upload the control page's HTML. Claude builds the variant you pick from it, using the hypothesis above and the brief (the linked idea's saved brief, or the one in the Brief tab). Copy, element and new-element changes are made as targeted edits with a change list. A redesign is returned as a full rewrite of the page.</p>
     <div class="row">
-      <div class="field"><label for="buildCopy">Copy variant to apply</label><select id="buildCopy"><option value="">Let the model decide from the hypothesis</option></select></div>
+      <div class="field"><label for="buildCopy">Variant to build</label><select id="buildCopy"><option value="">Let the model decide from the hypothesis</option></select></div>
+      <div class="field" style="flex:0 1 240px"><label for="buildMode">How to build it</label><select id="buildMode"><option value="auto">Auto (from the variant's scope)</option><option value="edits">Targeted edits</option><option value="rewrite">Full page rewrite</option></select></div>
       <div class="field"><label for="buildBase">Live page URL (optional, lets images and styles load in the preview)</label><input id="buildBase" placeholder="https://"></div>
     </div>
     <div class="actions"><label class="btn small" for="buildFile">Upload control .html</label><input id="buildFile" type="file" accept=".html,.htm,text/html" class="hidden"><span class="small" id="buildFileName">No control uploaded</span></div>
@@ -372,7 +377,7 @@ code.diff{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break
 (function(){
   if(window.claude&&window.claude.use)return;
   async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||r.statusText),{code:r.status===429?'rate_limited':'error'});return j}
-  const sample=async(input,opts={})=>{const j=await post('/api/ai',{input,json:false,tier:opts.modelTier||'default'});if(opts.onText)opts.onText({text:j.text,delta:j.text});return{text:j.text,truncated:false,modelTierApplied:'default'}};
+  const sample=async(input,opts={})=>{const j=await post('/api/ai',{input,json:false,tier:opts.modelTier||'default',long:!!opts.long});if(opts.onText)opts.onText({text:j.text,delta:j.text});return{text:j.text,truncated:!!j.truncated,modelTierApplied:'default'}};
   sample.json=async(input,opts={})=>{const j=await post('/api/ai',{input,json:true,tier:opts.modelTier||'default'});return j.value};
   sample.limits=async()=>({maxPromptBytes:200000});
   const listeners={};
@@ -591,12 +596,25 @@ $('briefToReadout').onclick=()=>{if(briefMd)$('roBrief').value=briefMd;else $('r
 
 /* ---------- 5 Variants ---------- */
 let variants=null;
+const DEPTH={mixed:'Make the three variants differ in ambition. A is light: copy plus small changes to existing elements. B is medium: it changes, moves, removes or adds elements. C is bold: it restructures a major section or redesigns the whole page. Each variant still combines more than one kind of change wherever that serves the hypothesis.',
+  copy:'All three variants change copy only. No element, new-element or layout changes.',
+  elements:'All three variants combine copy changes with changes to existing elements. Nothing new is added and the page structure stays.',
+  new:'Every variant adds at least one new element to the page, alongside whatever copy and element changes it needs.',
+  redesign:'Every variant is a whole-page redesign: a different structure and hierarchy, described section by section from top to bottom.'};
+const SCOPE_LABEL={copy:'Copy',elements:'Element changes','new elements':'New elements',redesign:'Redesign'};
 $('varRun').onclick=async()=>{const h=$('varHyp').value.trim();if(!h){$('varStatus').textContent='Add a hypothesis first.';return}
-  const prompt=`You are a direct-response copywriter working inside an experimentation programme. For the hypothesis below, write three variants, each with headline (max 9 words), subhead (max 18 words), cta (max 4 words). Each variant uses a different persuasion principle and targets a named segment. Give a one-line rationale. Then pick which to run first and why, in one sentence. No exclamation marks, no fake claims, no numbers that aren't in the hypothesis.
-Hypothesis: ${h}\nCurrent copy: ${$('varCurrent').value||'(not given)'}
-Return ONLY JSON: {"variants":[{"name":"A","headline":"","subhead":"","cta":"","principle":"","segment":"","rationale":""}],"runFirst":"A","why":""}`;
+  const outline=build&&build.html?htmlToText(build.html).slice(0,6000):'';
+  const prompt=`You are a senior CRO strategist and conversion designer working inside an experimentation programme. For the hypothesis below, design three test variants. A variant is a set of changes to the page, not just new words. There are four kinds of change:
+- copy: rewording existing text (headline, subhead, CTA, body copy, microcopy, form labels)
+- element: changing something already on the page (move it, resize it, restyle it, swap an image, reorder sections, remove it)
+- new: adding something that is not on the page (trust bar, pricing breakdown, FAQ, sticky CTA, comparison table, progress indicator, testimonial block, field help)
+- layout: restructuring a section or the whole page (new hierarchy, different flow, redesigned hero, full redesign)
+${DEPTH[$('varDepth').value]||DEPTH.mixed}
+For each variant give: name (A, B, C); title (max 6 words); scope, the most ambitious kind of change it contains, one of "copy", "elements", "new elements", "redesign"; headline (max 9 words), subhead (max 18 words) and cta (max 4 words) for the hero; changes, 2 to 7 items, each with type (copy, element, new or layout), target (the part of the page) and change (exactly what to do, specific enough for a designer or developer to build without asking); principle; segment; effort (low, medium or high); rationale in one line. Each variant uses a different persuasion or UX principle and targets a named segment. Then pick which to run first and why, in one sentence, weighing expected impact against effort. No exclamation marks, no fake claims, no numbers that are not in the hypothesis or on the page.
+Hypothesis: ${h}\nCurrent copy: ${$('varCurrent').value||'(not given)'}\nControl page, visible text top to bottom: ${outline||'(not uploaded; describe targets in general terms such as hero, pricing section, footer)'}
+Return ONLY JSON: {"variants":[{"name":"A","title":"","scope":"copy","headline":"","subhead":"","cta":"","changes":[{"type":"copy","target":"","change":""}],"principle":"","segment":"","effort":"low","rationale":""}],"runFirst":"A","why":""}`;
   try{variants=await askJSON(prompt,$('varStatus'));renderVariants();$('varScreen').disabled=false;$('personaOut').classList.add('hidden');bank('variants',h,{hypothesis:h,result:variants});attach('variants',toolOutput('variants'))}catch(e){}};
-function renderVariants(){const v=variants.variants||[];$('varOut').classList.remove('hidden');$('varOut').innerHTML=`<table class="data"><thead><tr><th></th><th>Headline</th><th>Subhead</th><th>CTA</th><th>Principle</th><th>Segment</th><th>Rationale</th></tr></thead><tbody>${v.map(x=>`<tr><td><strong>${esc(x.name)}</strong>${variants.runFirst===x.name?' <span class="pill accent">Run first</span>':''}</td><td>${esc(x.headline)}</td><td>${esc(x.subhead)}</td><td>${esc(x.cta)}</td><td>${esc(x.principle)}</td><td>${esc(x.segment)}</td><td class="small">${esc(x.rationale)}</td></tr>`).join('')}</tbody></table><p class="small" style="margin-top:8px"><strong>Why ${esc(variants.runFirst)} first:</strong> ${esc(variants.why)}</p>`;renderBuildCopy()}
+function renderVariants(){const v=variants.variants||[];$('varOut').classList.remove('hidden');$('varOut').innerHTML=`<div class="cards">${v.map(x=>`<div class="card"><div class="meta"><span class="pill accent">${esc(x.name)}</span>${x.scope?`<span class="pill">${esc(SCOPE_LABEL[x.scope]||x.scope)}</span>`:''}${x.effort?`<span class="pill">${esc(x.effort)} effort</span>`:''}${variants.runFirst===x.name?'<span class="pill good">Run first</span>':''}</div>${x.title?`<div class="title">${esc(x.title)}</div>`:''}<div><strong>${esc(x.headline)}</strong></div><div class="hyp">${esc(x.subhead)}</div><div class="small">CTA: ${esc(x.cta)}</div>${(x.changes||[]).length?`<ul class="changes">${x.changes.map(c=>`<li><span class="tag">${esc(c.type)}</span><span><strong>${esc(c.target)}:</strong> ${esc(c.change)}</span></li>`).join('')}</ul>`:''}<div class="tags">${x.principle?`<span class="tag">${esc(x.principle)}</span>`:''}${x.segment?`<span class="tag">${esc(x.segment)}</span>`:''}</div><div class="verb">${esc(x.rationale)}</div></div>`).join('')}</div><p class="small"><strong>Why ${esc(variants.runFirst)} first:</strong> ${esc(variants.why)}</p>`;renderBuildCopy()}
 $('varScreen').onclick=async()=>{if(!variants)return;const research=$('synthInput').value.trim().slice(0,6000)||'(no research inputs loaded; build personas from the hypothesis segment only and say so)';
   const prompt=`Build 4 customer personas grounded ONLY in the research verbatims below (name, one-line situation, main anxiety, what would convince them). Then have each persona rank the variants 1-3 with a one-line reason in their voice. Give a combined ranking with the vote tally. Finish with a two-sentence caveat that this is a prioritisation filter and not evidence; the real test decides.
 Research verbatims:\n${research}\n\nVariants: ${JSON.stringify(variants.variants)}
@@ -604,42 +622,71 @@ Return ONLY JSON: {"personas":[{"name":"","situation":"","anxiety":"","convincer
   try{const r=await askJSON(prompt,$('varStatus'));$('personaOut').classList.remove('hidden');$('personaOut').innerHTML=`<h3>Persona pre-screen</h3><div class="summary-row">${(r.combined||[]).sort((a,b)=>b.points-a.points).map((c,i)=>`<span class="pill ${i===0?'accent':''}">${esc(c.name)}: ${esc(c.points)} pts</span>`).join('')}</div><div class="cards">${(r.personas||[]).map(p=>`<div class="card"><div class="title">${esc(p.name)}</div><div class="small">${esc(p.situation)}</div><div><strong>Anxiety:</strong> ${esc(p.anxiety)}</div><div><strong>Would convince them:</strong> ${esc(p.convincer)}</div><div class="meta">${(p.ranking||[]).map((v,i)=>`<span class="pill ${i===0?'good':''}">${i+1}. ${esc(v)}</span>`).join('')}</div><div class="verb">${esc(p.reason)}</div></div>`).join('')}</div><p class="note">${esc(r.caveat)}</p>`}catch(e){}};
 
 /* ---------- 5b Build the variant page from the control ---------- */
-let build=null; // {name, html, edits:[{find,replace,why,ok}], summary, variantHtml, copyVariant, truncated}
-function renderBuildCopy(){const v=(variants&&variants.variants)||[];const cur=$('buildCopy').value;$('buildCopy').innerHTML='<option value="">Let the model decide from the hypothesis</option>'+v.map(x=>`<option value="${esc(x.name)}">${esc(x.name)}: ${esc(x.headline)}</option>`).join('');const want=v.some(x=>x.name===cur)?cur:(variants&&v.some(x=>x.name===variants.runFirst)?variants.runFirst:'');$('buildCopy').value=want}
-$('buildFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const html=await f.text();if(build&&build.edits&&!build.html){build.html=html;build.name=f.name;applyBuild()}else build={name:f.name,html,edits:null,summary:'',variantHtml:''};$('buildStatus').textContent='';renderBuild()};
-/* What the model reads: the control without script, style and SVG bodies, comments or embedded data */
+let build=null; // {name, html, mode:'edits'|'rewrite', edits:[{find,replace,why,ok}], summary, variantHtml, copyVariant, truncated, keptNote}
+function renderBuildCopy(){const v=(variants&&variants.variants)||[];const cur=$('buildCopy').value;$('buildCopy').innerHTML='<option value="">Let the model decide from the hypothesis</option>'+v.map(x=>`<option value="${esc(x.name)}">${esc(x.name)}: ${esc(x.title||x.headline)}${x.scope?` (${esc(SCOPE_LABEL[x.scope]||x.scope)})`:''}</option>`).join('');const want=v.some(x=>x.name===cur)?cur:(variants&&v.some(x=>x.name===variants.runFirst)?variants.runFirst:'');$('buildCopy').value=want}
+$('buildFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const html=await f.text();if(build&&build.edits&&build.edits.length&&!build.html&&build.mode!=='rewrite'){build.html=html;build.name=f.name;applyBuild()}else build={name:f.name,html,edits:null,summary:'',variantHtml:''};$('buildStatus').textContent='';renderBuild()};
+/* What the model reads for targeted edits: the control without script, style and SVG bodies, comments or embedded data */
 function slimHtml(html){return html.replace(/<!--[\s\S]*?-->/g,'').replace(/(<script\b[^>]*>)[\s\S]*?(<\/script>)/gi,'$1$2').replace(/(<style\b[^>]*>)[\s\S]*?(<\/style>)/gi,'$1$2').replace(/(<svg\b[^>]*>)[\s\S]*?(<\/svg>)/gi,'$1$2').replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+\/=]+/gi,'data:removed').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n')}
+/* For a full rewrite: scripts, large stylesheets, SVGs and embedded data are swapped for numbered placeholders and put back afterwards */
+function keepSlim(html){const kept=[];let css=0,tags=0;const hold=(tag,m,attrs)=>{kept.push(m);tags++;return `<${tag}${attrs} data-gxt-keep="${kept.length-1}"></${tag}>`};
+  const out=html.replace(/<!--[\s\S]*?-->/g,'').replace(/<script\b([^>]*)>[\s\S]*?<\/script>/gi,(m,a)=>hold('script',m,a)).replace(/<style\b([^>]*)>([\s\S]*?)<\/style>/gi,(m,a,body)=>{css+=body.length;return css<20000?m:hold('style',m,a)}).replace(/<svg\b([^>]*)>[\s\S]*?<\/svg>/gi,(m,a)=>hold('svg',m,a)).replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+\/=]+/gi,m=>{kept.push(m);return `gxt-data-${kept.length-1}`}).replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n');return{out,kept,tags}}
+function restoreKept(html,kept){let restored=0;const out=html.replace(/<(script|style|svg)\b[^>]*\sdata-gxt-keep="(\d+)"[^>]*>\s*<\/\1>/gi,(m,t,i)=>{if(kept[+i]==null)return '';restored++;return kept[+i]}).replace(/gxt-data-(\d+)/g,(m,i)=>kept[+i]??m);return{out,restored}}
 const reEsc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-function applyBuild(){if(!build||!build.edits)return;let out=build.html||'';build.edits.forEach(ed=>{ed.ok=false;if(!out||!ed.find)return;let i=out.indexOf(ed.find),len=ed.find.length;
+function applyBuild(){if(!build||!build.edits||build.mode==='rewrite')return;let out=build.html||'';build.edits.forEach(ed=>{ed.ok=false;if(!out||!ed.find)return;let i=out.indexOf(ed.find),len=ed.find.length;
     if(i<0){try{const m=new RegExp(ed.find.trim().split(/\s+/).map(reEsc).join('\\s+')).exec(out);if(m){i=m.index;len=m[0].length}}catch(e){}}
     if(i>=0){out=out.slice(0,i)+ed.replace+out.slice(i+len);ed.ok=true}});build.variantHtml=build.html?out:''}
 function withBase(html){const b=$('buildBase').value.trim();if(!/^https?:\/\//i.test(b))return html;const tag=`<base href="${esc(b)}">`;return /<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+tag):tag+html}
 function renderBuild(){const has=!!(build&&build.edits);$('buildOut').classList.toggle('hidden',!has);$('buildDownload').disabled=$('buildCopyHtml').disabled=!(build&&build.variantHtml);
-  $('buildFileName').textContent=!build?'No control uploaded':build.html?`${build.name} · ${fmtN(Math.max(1,build.html.length/1024))} KB`:`${build.name} is not loaded. Upload it again to preview and download.`;if(!has)return;
+  $('buildFileName').textContent=!build?'No control uploaded':build.html?`${build.name} · ${fmtN(Math.max(1,build.html.length/1024))} KB`:`${build.name} is not loaded. Upload it again to preview and download.`;if(!has)return;const rewrite=build.mode==='rewrite';
   const rows=build.edits.map((e,i)=>`<tr><td class="mono">${i+1}</td><td><span class="pill ${e.ok?'good':'warn'}">${e.ok?'Applied':build.html?'Not found':'Needs control'}</span></td><td>${esc(e.why||'')}</td><td><code class="diff">${esc(e.find)}</code></td><td><code class="diff">${esc(e.replace)}</code></td></tr>`).join('');
-  $('buildOut').innerHTML=`<h3>Variant page${build.copyVariant?` · copy variant ${esc(build.copyVariant)}`:''}</h3><p>${esc(build.summary)}</p>${build.truncated?'<p class="note">The control was too large to send in full, so only the first part of the page was considered.</p>':''}<div class="tablewrap"><table class="data"><thead><tr><th>#</th><th>Status</th><th>Why</th><th>Control</th><th>Variant</th></tr></thead><tbody>${rows}</tbody></table></div>${build.variantHtml?'<div class="previews"><div><p class="small">Control</p><iframe id="buildFrameA" sandbox="" title="Control preview"></iframe></div><div><p class="small">Variant</p><iframe id="buildFrameB" sandbox="" title="Variant preview"></iframe></div></div><p class="small">Previews run with scripts switched off, so anything the page builds with JavaScript will be missing. Open the downloaded file in a browser before building the test.</p>':''}`;
-  if(build.variantHtml){$('buildFrameA').srcdoc=withBase(build.html);$('buildFrameB').srcdoc=withBase(build.variantHtml)}}
+  const detail=rewrite?`<p class="note">Full page rewrite. ${build.variantHtml?esc(build.keptNote||''):'The rewritten page is not stored here. Upload the control and build it again to get the preview and download.'}</p>`:`<div class="tablewrap"><table class="data"><thead><tr><th>#</th><th>Status</th><th>Why</th><th>Control</th><th>Variant</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  $('buildOut').innerHTML=`<h3>Variant page${build.copyVariant?` · variant ${esc(build.copyVariant)}`:''}${rewrite?' · redesign':''}</h3><p>${esc(build.summary)}</p>${build.truncated?'<p class="note">The control was too large to send in full, so only the first part of the page was considered.</p>':''}${detail}${build.variantHtml&&build.html?'<div class="previews"><div><p class="small">Control</p><iframe id="buildFrameA" sandbox="" title="Control preview"></iframe></div><div><p class="small">Variant</p><iframe id="buildFrameB" sandbox="" title="Variant preview"></iframe></div></div><p class="small">Previews run with scripts switched off, so anything the page builds with JavaScript will be missing. Open the downloaded file in a browser before building the test.</p>':''}`;
+  if(build.variantHtml&&build.html){$('buildFrameA').srcdoc=withBase(build.html);$('buildFrameB').srcdoc=withBase(build.variantHtml)}}
 $('buildBase').addEventListener('change',renderBuild);
+const REWRITE_LIMIT=60000,EDIT_LIMIT=150000;
 $('buildRun').onclick=async()=>{const h=$('varHyp').value.trim();if(!h){$('buildStatus').textContent='Add a hypothesis first.';return}if(!build||!build.html){$('buildStatus').textContent='Upload the control page HTML first.';return}
-  const LIMIT=150000;const slim=slimHtml(build.html);const cut=slim.length>LIMIT;const cv=((variants&&variants.variants)||[]).find(x=>x.name===$('buildCopy').value);
+  const cv=((variants&&variants.variants)||[]).find(x=>x.name===$('buildCopy').value);const spec=cv?JSON.stringify({title:cv.title,scope:cv.scope,headline:cv.headline,subhead:cv.subhead,cta:cv.cta,changes:cv.changes,principle:cv.principle,segment:cv.segment}):'';
   let briefTxt='';const idea=currentIdea();if(idea){const art=await artGet(idea.id);briefTxt=(art&&art.brief&&art.brief.markdown)||''}if(!briefTxt)briefTxt=briefMd;
-  const prompt=`You are a CRO developer preparing the variant arm of an A/B test. Below is the HTML of the control page. Produce the smallest set of edits that implements the change described by the hypothesis, the brief and the copy variant (where given). Change only what the test needs and leave everything else alone.
-Return ONLY JSON: {"summary":"two sentences: what changed on the page and why","edits":[{"find":"","replace":"","why":""}]}
+  const choice=$('buildMode').value;let mode=choice==='auto'?(cv&&cv.scope==='redesign'?'rewrite':'edits'):choice,note='';const ks=keepSlim(build.html);
+  if(mode==='rewrite'&&ks.out.length>REWRITE_LIMIT){if(choice==='rewrite'){$('buildStatus').textContent=`This page is too large for a full rewrite (${fmtN(ks.out.length/1024)} KB after scripts and images are set aside; the limit is ${REWRITE_LIMIT/1000} KB). Use targeted edits.`;return}mode='edits';note=' The page is too large for a full rewrite, so the redesign was made as targeted edits.'}
+  const context=`Hypothesis: ${h}\nVariant to build: ${spec||'(none chosen; design the changes the hypothesis calls for)'}\nBrief: ${briefTxt?briefTxt.slice(0,6000):'(none)'}`;
+  const done=()=>{build.copyVariant=cv?cv.name:'';renderBuild();bank('build',h,{hypothesis:h,mode:build.mode,summary:build.summary,edits:build.edits,controlName:build.name,copyVariant:build.copyVariant});return attach('build',toolOutput('build')).then(ok=>ok&&saveControl())};
+  if(mode==='rewrite'){
+    const prompt=`You are a senior conversion designer and front-end developer preparing the variant arm of an A/B test as a full rewrite of the page. Below is the control page's HTML. Rewrite it to implement the variant in full: restructure sections, change the hierarchy, rewrite copy, change, add and remove elements as the variant and hypothesis call for. Keep the brand recognisable: same logo, colours, fonts, imagery, links and form actions unless the variant says otherwise.
+Output rules:
+- Line one is a comment: <!-- GXT-SUMMARY: three or four sentences on what changed and why, then anything in the variant you could not do -->
+- Then the complete HTML document from <!doctype html> to </html>. No Markdown, no code fences, no commentary.
+- Elements carrying a data-gxt-keep attribute stand in for the control's scripts, stylesheets and SVGs. Copy each one through exactly as written, in the same place (head, or end of body), so tracking and styling keep working. Leave one out only if it is an SVG that belongs to something you removed. Text like gxt-data-3 stands in for embedded data; keep it as written.
+- Put new CSS in one <style> block at the end of <head>, with new class names prefixed gxt- so they cannot clash. Reuse existing classes where they do the job. Design for mobile first.
+- No new scripts and no external resources.
+- No claims, numbers or offers that are not in the hypothesis, the brief, the variant or the control itself.
+${context}
+Control HTML:
+${ks.out}`;
+    $('buildStatus').textContent='Redesigning the page. This can take a couple of minutes…';
+    try{if(!sampleFn)throw new Error('AI unavailable');const r=await sampleFn(prompt,{modelTier:'default',cache:false,long:true});let t=String(r.text||'').trim().replace(/^```(?:html)?\s*/i,'').replace(/\s*```$/,'');const sm=t.match(/<!--\s*GXT-SUMMARY:([\s\S]*?)-->/);if(sm)t=t.replace(sm[0],'').trim();
+      if(r.truncated||!/<\/html>\s*$/i.test(t)){$('buildStatus').textContent='The redesigned page was too long to return in one go. Try targeted edits, or a smaller control.';return}
+      const back=restoreKept(t,ks.kept);Object.assign(build,{mode:'rewrite',edits:[],summary:sm?sm[1].trim():'',variantHtml:back.out,truncated:false,keptNote:ks.tags?`${back.restored} of ${ks.tags} original scripts, stylesheets and SVGs were carried into the variant.`:''});
+      $('buildStatus').textContent='Redesign built.';await done()}catch(e){$('buildStatus').textContent=e&&e.code==='rate_limited'?'Rate limited, wait a moment and try again.':'Something went wrong: '+(e.message||'unknown')}
+    return}
+  const slim=slimHtml(build.html);const cut=slim.length>EDIT_LIMIT;
+  const prompt=`You are a senior conversion designer and front-end developer preparing the variant arm of an A/B test. Below is the HTML of the control page. Implement the variant in full as a list of edits to that HTML. A variant can mix copy changes, changes to existing elements (move, restyle, resize, reorder, remove), brand-new elements (sections, trust bars, tables, sticky CTAs, FAQs) and the restructuring of whole sections. Build every change the variant lists; do not stop at the copy. Leave everything the variant does not touch exactly as it is.
+Return ONLY JSON: {"summary":"three sentences: what changed on the page and why, then anything in the variant you could not build","edits":[{"find":"","replace":"","why":""}]}
 Rules for edits:
-- "find" is copied character for character from the control HTML, is specific enough to occur once, and is as short as it can be (one text run or one element, never more than about 400 characters).
-- "replace" is the complete replacement for that string. To insert something new, repeat the found string and put the new markup next to it.
+- "find" is copied character for character from the control HTML and is specific enough to occur once. Keep it as short as the change allows: one text run or one element for small changes, up to a whole section (about 1500 characters) when restructuring.
+- "replace" is the complete replacement for that string. To add a new element, repeat the found string and put the new markup before or after it. To move an element, remove it with one edit and insert it with another. To remove one, replace it with an empty string.
+- Edits are applied in order and must not overlap.
 - Script, style and SVG bodies, comments and embedded data were removed from what you see. Never include a script, style, svg or comment in a find string; anchor on the text or tags beside them.
-- New content reuses the page's existing classes and inline styles so it matches the design. No scripts, no external resources, no tracking.
-- No claims, numbers or offers that are not in the hypothesis, the brief, the copy variant or the control itself.
-- At most 12 edits. "why" is one short sentence tying the edit to the hypothesis.
-- If the control lacks the element the hypothesis targets, say so in summary and return the closest sensible edits.
-Hypothesis: ${h}
-Copy variant to apply: ${cv?JSON.stringify({headline:cv.headline,subhead:cv.subhead,cta:cv.cta,principle:cv.principle,segment:cv.segment}):'(none chosen; write the copy the hypothesis calls for)'}
-Brief: ${briefTxt?briefTxt.slice(0,6000):'(none)'}
+- Styling: reuse the page's existing classes and inline styles first. If the variant needs new CSS, add it with one edit whose find is "</head>" and whose replace is a <style> block followed by "</head>"; prefix new class names with gxt- so they cannot clash. Design for mobile first.
+- No scripts, no external resources, no tracking.
+- No claims, numbers or offers that are not in the hypothesis, the brief, the variant or the control itself.
+- At most 30 edits. "why" is one short sentence tying the edit to the variant.
+- If the control lacks something the variant targets, say so in summary and build the closest sensible version.
+${context}
 Control HTML${cut?' (truncated)':''}:
-${slim.slice(0,LIMIT)}`;
-  try{const r=await askJSON(prompt,$('buildStatus'));build.edits=(r.edits||[]).filter(e=>e&&typeof e.find==='string'&&typeof e.replace==='string'&&e.find).slice(0,20);build.summary=r.summary||'';build.copyVariant=cv?cv.name:'';build.truncated=cut;applyBuild();renderBuild();
-    $('buildStatus').textContent=`${build.edits.filter(e=>e.ok).length} of ${build.edits.length} edits applied.`;bank('build',h,{hypothesis:h,summary:build.summary,edits:build.edits,controlName:build.name,copyVariant:build.copyVariant});if(await attach('build',toolOutput('build')))await saveControl()}catch(e){}};
+${slim.slice(0,EDIT_LIMIT)}`;
+  try{const r=await askJSON(prompt,$('buildStatus'));Object.assign(build,{mode:'edits',edits:(r.edits||[]).filter(e=>e&&typeof e.find==='string'&&typeof e.replace==='string'&&e.find).slice(0,40),summary:r.summary||'',truncated:cut,keptNote:''});applyBuild();
+    $('buildStatus').textContent=`${build.edits.filter(e=>e.ok).length} of ${build.edits.length} edits applied.${note}`;await done()}catch(e){}};
 $('buildDownload').onclick=()=>{if(!build||!build.variantHtml)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([build.variantHtml],{type:'text/html'}));a.download=build.name.replace(/\.html?$/i,'')+'-variant.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
 $('buildCopyHtml').onclick=()=>copy(build&&build.variantHtml);
 
@@ -684,10 +731,10 @@ document.addEventListener('change',e=>{const el=e.target.closest('select.ideaSel
 function toolOutput(kind){switch(kind){
   case 'brief':return briefMd?{hypothesis:$('briefHyp').value.trim(),markdown:briefMd}:null;
   case 'variants':return variants?{hypothesis:$('varHyp').value.trim(),result:variants}:null;
-  case 'build':return build&&build.edits?{hypothesis:$('varHyp').value.trim(),summary:build.summary,edits:build.edits.map(e=>({find:e.find,replace:e.replace,why:e.why})),controlName:build.name,copyVariant:build.copyVariant||''}:null;
+  case 'build':return build&&build.edits?{hypothesis:$('varHyp').value.trim(),mode:build.mode||'edits',keptNote:build.keptNote||'',summary:build.summary,edits:build.edits.map(e=>({find:e.find,replace:e.replace,why:e.why})),controlName:build.name,copyVariant:build.copyVariant||''}:null;
   case 'readout':return roMd?{brief:$('roBrief').value,arms:getArms(),markdown:roMd,verdict:roComputed?roComputed.verdict:''}:null}
   return null}
-async function saveControl(){if(currentIdeaId&&build&&build.html&&build.html.length<800000)await artSet(currentIdeaId+'-control',{html:build.html,name:build.name,base:$('buildBase').value.trim()})}
+async function saveControl(){if(!(currentIdeaId&&build&&build.html))return;const rewritten=build.mode==='rewrite'?build.variantHtml||'':'';if(build.html.length+rewritten.length<800000)await artSet(currentIdeaId+'-control',{html:build.html,name:build.name,base:$('buildBase').value.trim(),variantHtml:rewritten})}
 async function attach(kind,data){const id=currentIdeaId;if(!id||!data||!currentIdea())return false;const art=(await artGet(id))||{};art[kind]={...data,at:new Date().toISOString()};await artSet(id,art);
   save('roadmap',store.cache.roadmap.map(i=>i.id===id?{...i,has:{...(i.has||{}),[kind]:true},status:laterStage(stageOf(i),TOOL_STAGE[kind])}:i));return true}
 const TOOL_HYP={brief:()=>$('briefHyp').value.trim(),variants:()=>$('varHyp').value.trim(),readout:()=>(($('roBrief').value.match(/We believe that[^\n]*/)||[''])[0]||$('roBrief').value.trim().slice(0,200))};
@@ -699,7 +746,7 @@ function resetTools(){briefMd='';setBriefEditing(false);$('briefOut').innerHTML=
 async function openIdea(id){setIdea(id);const i=currentIdea();if(!i)return;resetTools();loadBrief(i);$('varHyp').value=i.hypothesis||i.title||'';const art=(await artGet(id))||{};
   if(art.brief){briefMd=art.brief.markdown||'';$('briefOut').innerHTML=md(briefMd);$('roBrief').value=briefMd}
   if(art.variants){variants=art.variants.result;renderVariants();$('varScreen').disabled=false}
-  if(art.build){const c=await artGet(id+'-control');build={name:art.build.controlName||(c&&c.name)||'control.html',html:(c&&c.html)||'',edits:art.build.edits||[],summary:art.build.summary||'',copyVariant:art.build.copyVariant||'',variantHtml:''};if(c&&c.base)$('buildBase').value=c.base;applyBuild();renderBuild()}
+  if(art.build){const c=await artGet(id+'-control');build={name:art.build.controlName||(c&&c.name)||'control.html',html:(c&&c.html)||'',mode:art.build.mode||'edits',keptNote:art.build.keptNote||'',edits:art.build.edits||[],summary:art.build.summary||'',copyVariant:art.build.copyVariant||'',variantHtml:(art.build.mode==='rewrite'&&c&&c.variantHtml)||''};if(c&&c.base)$('buildBase').value=c.base;applyBuild();renderBuild()}
   if(art.readout){if(art.readout.brief)$('roBrief').value=art.readout.brief;if(art.readout.arms){setArms(art.readout.arms);computeRO()}roMd=art.readout.markdown||'';$('roOut').innerHTML=md(roMd)}
   const n=STAGE_KEYS.indexOf(stageOf(i));show(art.readout&&n>=STAGE_KEYS.indexOf('analysis')?'readout':(art.variants||art.build)&&n>=STAGE_KEYS.indexOf('build')?'variants':'brief')}
 
@@ -768,7 +815,7 @@ function reopen(h){const p=h.payload||{};setIdea(null);switch(h.kind){
   case 'fusion':fuseResult=p.result;renderFuse();show('fuse');break;
   case 'brief':setBriefEditing(false);$('briefHyp').value=p.hypothesis||'';briefMd=p.markdown||'';$('briefOut').innerHTML=md(briefMd);show('brief');break;
   case 'variants':$('varHyp').value=p.hypothesis||'';variants=p.result;renderVariants();$('varScreen').disabled=false;show('variants');break;
-  case 'build':$('varHyp').value=p.hypothesis||'';build={name:p.controlName||'control.html',html:'',edits:p.edits||[],summary:p.summary||'',copyVariant:p.copyVariant||'',variantHtml:''};applyBuild();renderBuild();show('variants');break;
+  case 'build':$('varHyp').value=p.hypothesis||'';build={name:p.controlName||'control.html',html:'',mode:p.mode||'edits',edits:p.edits||[],summary:p.summary||'',copyVariant:p.copyVariant||'',variantHtml:''};applyBuild();renderBuild();show('variants');break;
   case 'readout':$('roBrief').value=p.brief||'';if(p.arms)setArms(p.arms);roMd=p.markdown||'';$('roOut').innerHTML=md(roMd);if(p.strip)$('roStatStrip').innerHTML=p.strip;show('readout');break;}}
 
 /* ---------- Helpers ---------- */
