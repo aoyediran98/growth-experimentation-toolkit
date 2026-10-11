@@ -41,7 +41,7 @@ nav.rail button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px
 nav.rail button:hover{background:var(--soft)}
 nav.rail button:focus-visible{outline:2px solid var(--accent)}
 nav.rail button[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
-nav.rail button .n{font-family:var(--mono);font-size:11px;color:var(--muted);width:16px}
+nav.rail button .n{font-family:var(--mono);font-size:11px;color:var(--muted);width:18px}
 main{min-width:0}
 section.tool{display:none;flex-direction:column;gap:18px}
 section.tool.active{display:flex}
@@ -107,7 +107,7 @@ table.data td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text
 .arm{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:end}
 @media (max-width:600px){.arm{grid-template-columns:1fr 1fr}}
 .note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:6px;padding:8px 10px}
-.kanban{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:10px;overflow-x:auto}
+.kanban{display:grid;grid-template-columns:repeat(10,minmax(230px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px}
 .col{background:var(--soft);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .col h3{display:flex;justify-content:space-between}
 .col .card{padding:10px;gap:6px}
@@ -118,6 +118,13 @@ table.data td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text
 .badge-row{display:flex;flex-wrap:wrap;gap:6px}
 details summary{cursor:pointer;color:var(--muted);font-size:13px}
 .hidden{display:none!important}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 4px 2px 10px;border-radius:999px;background:var(--soft);color:var(--fg)}
+.chip button{all:unset;cursor:pointer;padding:0 6px;color:var(--muted)}
+.chip button:focus-visible{outline:2px solid var(--accent)}
+.previews{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.previews iframe{width:100%;height:460px;border:1px solid var(--line);border-radius:6px;background:#fff}
+code.diff{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break:break-word;display:block;max-height:120px;overflow:auto}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
 </style>
 </head>
@@ -135,17 +142,18 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
   <div class="stage">Research</div>
   <button data-tab="synth"><span class="n">1</span>Synthesise</button>
   <button data-tab="audit"><span class="n">2</span>Page audit</button>
+  <button data-tab="fuse"><span class="n">3</span>Fuse insights</button>
   <div class="stage">Plan</div>
-  <button data-tab="calc"><span class="n">3</span>Sample size</button>
-  <button data-tab="brief"><span class="n">4</span>Brief</button>
-  <button data-tab="variants"><span class="n">5</span>Variants</button>
-  <button data-tab="roadmap"><span class="n">6</span>Roadmap</button>
+  <button data-tab="calc"><span class="n">4</span>Sample size</button>
+  <button data-tab="brief"><span class="n">5</span>Brief</button>
+  <button data-tab="variants"><span class="n">6</span>Variants</button>
+  <button data-tab="roadmap"><span class="n">7</span>Roadmap</button>
   <div class="stage">Run</div>
-  <button data-tab="peek"><span class="n">7</span>Peeking guard</button>
+  <button data-tab="peek"><span class="n">8</span>Peeking guard</button>
   <div class="stage">Conclude</div>
-  <button data-tab="readout"><span class="n">8</span>Read-out</button>
-  <button data-tab="learn"><span class="n">9</span>Learnings</button>
-  <button data-tab="history"><span class="n">10</span>History</button>
+  <button data-tab="readout"><span class="n">9</span>Read-out</button>
+  <button data-tab="learn"><span class="n">10</span>Learnings</button>
+  <button data-tab="history"><span class="n">11</span>History</button>
 </nav>
 
 <main>
@@ -164,24 +172,41 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
   <div id="synthOut" class="hidden" style="display:flex;flex-direction:column;gap:12px">
     <div class="stats" id="synthStats"></div>
     <div class="cards" id="synthCards"></div>
-    <div class="panel"><h3>What to test first</h3><p id="synthFirst"></p><div class="actions"><button class="btn small" id="synthCopy">Copy as Markdown</button><button class="btn small" id="synthAddAll">Add all to roadmap</button></div></div>
+    <div class="panel"><h3>What to test first</h3><p id="synthFirst"></p><div class="actions"><button class="btn small" id="synthCopy">Copy as Markdown</button><button class="btn small" id="synthAddAll">Add all to roadmap</button><button class="btn small" id="synthToFuse">Fuse with page audit</button></div></div>
   </div>
 </section>
 
 <!-- 2 AUDIT -->
 <section class="tool" id="tab-audit">
-  <div class="intro"><h2>Page audit</h2><p>Paste the visible copy of a landing page (and the ad or headline that drives traffic to it, if you have it). The page is scored against five fixed heuristics and each issue is mapped to a hypothesis in the same format as Synthesise.</p></div>
+  <div class="intro"><h2>Page audit</h2><p>Paste the visible copy of a landing page, or upload its HTML or screenshots, along with the ad that drives traffic to it if you have it. The page is scored against five fixed heuristics and each issue is mapped to a hypothesis in the same format as Synthesise.</p></div>
   <div class="panel">
     <div class="row">
       <div class="field"><label for="auditUrl">Page URL (for the record)</label><input id="auditUrl" placeholder="https://"></div>
       <div class="field"><label for="auditAd">Ad or source message the visitor saw (optional)</label><input id="auditAd" placeholder="e.g. 'Lose 15% of body weight with clinician-led care'"></div>
     </div>
     <div class="field"><label for="auditCopy">Page copy, top to bottom</label><textarea id="auditCopy" placeholder="Headline&#10;Subhead&#10;CTA label&#10;Section text..."></textarea></div>
+    <div class="actions"><label class="btn small" for="auditPageFile">Upload page (HTML or screenshots)</label><input id="auditPageFile" type="file" accept=".html,.htm,text/html,image/*" multiple class="hidden"><label class="btn small" for="auditAdFile">Upload ad (image or HTML)</label><input id="auditAdFile" type="file" accept=".html,.htm,text/html,image/*" multiple class="hidden"><span class="small">HTML is read into the fields above. Images are sent to the model as pictures.</span></div>
+    <div class="chips" id="auditChips"></div>
     <div class="actions"><button class="btn primary" id="auditRun">Audit</button><button class="btn small" id="auditSample">Load sample</button><span class="status" id="auditStatus"></span></div>
   </div>
   <div id="auditOut" class="hidden" style="display:flex;flex-direction:column;gap:12px">
     <div class="stats" id="auditScores"></div>
     <div class="cards" id="auditCards"></div>
+    <div class="actions"><button class="btn small" id="auditToFuse">Fuse with research synthesis</button></div>
+  </div>
+</section>
+
+<!-- 3 FUSE -->
+<section class="tool" id="tab-fuse">
+  <div class="intro"><h2>Fused insights</h2><p>Combines the research synthesis (what customers say and do) with the page audit (what the page gets wrong). A problem that shows up in both is merged into one hypothesis and marked as corroborated; the rest carry over labelled by source.</p></div>
+  <div class="panel">
+    <div class="stats" id="fuseSources"></div>
+    <div class="actions"><button class="btn primary" id="fuseRun">Fuse insights</button><span class="status" id="fuseStatus"></span></div>
+  </div>
+  <div id="fuseOut" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+    <div class="stats" id="fuseStats"></div>
+    <div class="cards" id="fuseCards"></div>
+    <div class="panel"><h3>What to test first</h3><p id="fuseFirst"></p><div class="actions"><button class="btn small" id="fuseCopy">Copy as Markdown</button><button class="btn small" id="fuseAddAll">Add all to roadmap</button></div></div>
   </div>
 </section>
 
@@ -207,6 +232,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
   <div class="intro"><h2>Test brief</h2><p>Drafts the pre-commitment: metrics, success criteria, decision rule, pre-registered segments, sample and run time from the calculator, and a stop rule. The read-out judges results against this, so write it before the build.</p></div>
   <div class="panel">
     <div class="field"><label for="briefHyp">Hypothesis (pick a card in Synthesise or the roadmap, or write one)</label><textarea id="briefHyp" style="min-height:90px" placeholder="We believe that ... for ... will ... because ... We'll know this is true when ..."></textarea></div>
+    <div class="row"><div class="field"><label for="briefIdea">Linked test idea (output from this tool saves to it)</label><select class="ideaSel" id="briefIdea"></select></div><div class="actions"><button class="btn small" data-save-idea="brief">Save as new idea</button></div></div>
     <div class="row">
       <div class="field"><label for="briefSurface">Surface</label><input id="briefSurface" placeholder="e.g. assessment flow step 3"></div>
       <div class="field"><label for="briefMetric">Primary metric</label><input id="briefMetric" placeholder="e.g. assessment completion rate"></div>
@@ -220,22 +246,44 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
 
 <!-- 5 VARIANTS -->
 <section class="tool" id="tab-variants">
-  <div class="intro"><h2>Variants and persona pre-screen</h2><p>Three copy variants per hypothesis for headline, subhead and CTA, each tagged with its principle and segment. The persona pre-screen ranks them using personas grounded in the research inputs. It is a prioritisation filter, never a substitute for the test.</p></div>
+  <div class="intro"><h2>Variants and persona pre-screen</h2><p>Three copy variants per hypothesis for headline, subhead and CTA, each tagged with its principle and segment. The persona pre-screen ranks them using personas grounded in the research inputs. It is a prioritisation filter, never a substitute for the test. Link the variants to a test idea so they stay with its brief, then build the variant page from the control's HTML.</p></div>
   <div class="panel">
     <div class="field"><label for="varHyp">Hypothesis</label><textarea id="varHyp" style="min-height:80px"></textarea></div>
+    <div class="row"><div class="field"><label for="varIdea">Linked test idea (output from this tool saves to it)</label><select class="ideaSel" id="varIdea"></select></div><div class="actions"><button class="btn small" data-save-idea="variants">Save as new idea</button></div></div>
     <div class="row"><div class="field"><label for="varCurrent">Current headline / subhead / CTA (optional)</label><input id="varCurrent" placeholder="Start your assessment | Clinician-led weight care | Get started"></div></div>
     <div class="actions"><button class="btn primary" id="varRun">Generate variants</button><button class="btn" id="varScreen" disabled>Pre-screen with personas</button><span class="status" id="varStatus"></span></div>
   </div>
   <div class="tablewrap panel hidden" id="varOut"></div>
   <div class="panel hidden" id="personaOut"></div>
+  <div class="panel">
+    <h3>Build the variant page from the control</h3>
+    <p class="small">Upload the control page's HTML. Claude edits it to apply the hypothesis above, the brief (the linked idea's saved brief, or the one in the Brief tab) and the copy variant you pick. You get a change list and the edited page.</p>
+    <div class="row">
+      <div class="field"><label for="buildCopy">Copy variant to apply</label><select id="buildCopy"><option value="">Let the model decide from the hypothesis</option></select></div>
+      <div class="field"><label for="buildBase">Live page URL (optional, lets images and styles load in the preview)</label><input id="buildBase" placeholder="https://"></div>
+    </div>
+    <div class="actions"><label class="btn small" for="buildFile">Upload control .html</label><input id="buildFile" type="file" accept=".html,.htm,text/html" class="hidden"><span class="small" id="buildFileName">No control uploaded</span></div>
+    <div class="actions"><button class="btn primary" id="buildRun">Build variant page</button><button class="btn small" id="buildDownload" disabled>Download variant .html</button><button class="btn small" id="buildCopyHtml" disabled>Copy variant HTML</button><span class="status" id="buildStatus"></span></div>
+  </div>
+  <div class="panel hidden" id="buildOut"></div>
 </section>
 
 <!-- 6 ROADMAP -->
 <section class="tool" id="tab-roadmap">
-  <div class="intro"><h2>Roadmap</h2><p>Every hypothesis with its ICE score and status. "What next" orders the backlog by the method: riskiest assumptions first, cheap validations before big builds.</p></div>
+  <div class="intro"><h2>Roadmap</h2><p>Every test idea, at whichever of the ten steps it has reached, with its ICE score and what has been saved to it. Open an idea to carry on where it stopped. "What next" orders the ideas not yet in build: riskiest assumptions first, cheap validations before big builds.</p></div>
   <div class="panel">
-    <div class="actions"><button class="btn primary" id="rmNext">What should we test next?</button><button class="btn small" id="rmAdd">Add hypothesis by hand</button><button class="btn small" id="rmClear">Clear board</button><span class="status" id="rmStatus"></span></div>
+    <div class="actions"><button class="btn primary" id="rmNext">What should we test next?</button><button class="btn small" id="rmClear">Clear board</button><span class="status" id="rmStatus"></span></div>
     <div class="note hidden" id="rmNextOut"></div>
+    <details id="rmAddBox"><summary>Add an idea at any step</summary>
+      <div style="display:flex;flex-direction:column;gap:12px;margin-top:10px">
+        <div class="field" style="flex:none"><label for="rmNewText">Idea or hypothesis</label><textarea id="rmNewText" style="min-height:70px" placeholder="A rough idea, or: We believe that ... for ... will ... because ..."></textarea></div>
+        <div class="row">
+          <div class="field"><label for="rmNewStage">Step it has reached</label><select id="rmNewStage"></select></div>
+          <div class="field"><label for="rmNewNotes">Notes (optional)</label><input id="rmNewNotes" placeholder="e.g. waiting on design, live since 3 Oct"></div>
+          <div class="actions"><button class="btn" id="rmAddSave">Save idea</button></div>
+        </div>
+      </div>
+    </details>
   </div>
   <div class="kanban" id="kanban"></div>
 </section>
@@ -267,6 +315,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
   <div class="intro"><h2>Read-out</h2><p>The conclusion mirrors the brief and closes the loop on the pre-committed decision rule. Statistics are computed here in the page; the AI only writes the narrative around numbers it is handed.</p></div>
   <div class="panel">
     <div class="field"><label for="roBrief">Original brief</label><textarea id="roBrief" style="min-height:110px" placeholder="Paste the brief, or draft one in the Brief tab and press 'Use in read-out'."></textarea></div>
+    <div class="row"><div class="field"><label for="roIdea">Linked test idea (output from this tool saves to it)</label><select class="ideaSel" id="roIdea"></select></div><div class="actions"><button class="btn small" data-save-idea="readout">Save as new idea</button></div></div>
     <div class="row">
       <div class="field"><label for="roStart">Start</label><input id="roStart" type="date"></div>
       <div class="field"><label for="roEnd">End</label><input id="roEnd" type="date"></div>
@@ -306,7 +355,7 @@ details summary{cursor:pointer;color:var(--muted);font-size:13px}
 
 <!-- 10 HISTORY -->
 <section class="tool" id="tab-history">
-  <div class="intro"><h2>History</h2><p>Every synthesis, audit, brief, variant set and read-out is banked here with a timestamp, so nothing you generate is lost and any earlier run can be reopened.</p></div>
+  <div class="intro"><h2>History</h2><p>Every synthesis, audit, fusion, brief, variant set, built page and read-out is banked here with a timestamp, so nothing you generate is lost and any earlier run can be reopened.</p></div>
   <div class="panel"><div class="row"><div class="field"><label for="hsSearch">Search</label><input id="hsSearch" placeholder="company, hypothesis, date..."></div><div class="actions"><button class="btn small" id="hsClear">Clear history</button></div></div></div>
   <div class="tablewrap panel" id="hsTable"></div>
 </section>
@@ -346,7 +395,7 @@ const uid=()=>Math.random().toString(36).slice(2,10);
 
 /* ---------- Tabs ---------- */
 const rail=$('rail');
-function show(tab){document.querySelectorAll('section.tool').forEach(s=>s.classList.toggle('active',s.id==='tab-'+tab));rail.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));try{localStorage.setItem('gxt.tab',tab)}catch(e){}}
+function show(tab){document.querySelectorAll('section.tool').forEach(s=>s.classList.toggle('active',s.id==='tab-'+tab));rail.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab?'page':'false'));try{localStorage.setItem('gxt.tab',tab)}catch(e){}if(tab==='fuse'){try{renderFuseSources()}catch(e){}}}
 rail.addEventListener('click',e=>{const b=e.target.closest('button');if(b)show(b.dataset.tab)});
 let startTab='synth';try{startTab=location.hash.replace('#','')||localStorage.getItem('gxt.tab')||'synth'}catch(e){}
 if(!document.getElementById('tab-'+startTab))startTab='synth';show(startTab);
@@ -379,7 +428,7 @@ function emit(){store.listeners.forEach(f=>f())}
 /* ---------- AI ---------- */
 let sampleFn=null;
 async function aiInit(){try{sampleFn=await window.claude?.use?.('sample')}catch(e){sampleFn=null}
-  if(sampleFn){$('aiPill').textContent='AI: ready';$('aiPill').className='pill good'}else{$('aiPill').textContent='AI: unavailable';$('aiPill').className='pill warn';['synthRun','auditRun','briefRun','varRun','rmNext','lnSummary','roRun'].forEach(id=>{$(id).disabled=true;$(id).title='AI is not available in this view'})}}
+  if(sampleFn){$('aiPill').textContent='AI: ready';$('aiPill').className='pill good'}else{$('aiPill').textContent='AI: unavailable';$('aiPill').className='pill warn';['synthRun','auditRun','briefRun','varRun','rmNext','lnSummary','roRun','fuseRun','buildRun'].forEach(id=>{$(id).disabled=true;$(id).title='AI is not available in this view'})}}
 async function askJSON(prompt,statusEl,tier='default'){if(!sampleFn)throw new Error('AI unavailable');statusEl.textContent='Thinking…';try{const v=await sampleFn.json(prompt,{modelTier:tier,cache:false});statusEl.textContent='';return v}catch(e){statusEl.textContent=e&&e.code==='rate_limited'?'Rate limited, wait a moment and try again.':'Something went wrong: '+(e.message||e.code||'unknown');throw e}}
 async function askText(prompt,statusEl,onText){if(!sampleFn)throw new Error('AI unavailable');statusEl.textContent='Writing…';try{const r=await sampleFn(prompt,{modelTier:'default',cache:false,onText:u=>onText&&onText(u.text)});statusEl.textContent='';return r.text}catch(e){statusEl.textContent='Something went wrong: '+(e.message||e.code||'unknown');throw e}}
 
@@ -429,16 +478,17 @@ function renderSynth(){const cl=(synthResult.clusters||[]).slice().sort((a,b)=>b
   $('synthCards').innerHTML=cl.map((c,i)=>hypCard(c,i,'synth')).join('');$('synthFirst').textContent=synthResult.firstTest||''}
 function stat(k,v,d){return `<div class="stat"><span class="k">${esc(k)}</span><span class="v">${esc(v)}</span><span class="d">${esc(d)}</span></div>`}
 function iceTotal(c){return c.ice?(c.ice.impact+c.ice.confidence+c.ice.ease):0}
-function hypCard(c,i,src){const low=c.lowConfidence?'<span class="pill warn">Low confidence</span>':'';return `<div class="card" data-i="${i}" data-src="${src}"><div class="meta"><span class="pill accent">Priority ${esc(c.priority)}</span><span class="pill">F${esc(c.frequency)} × S${esc(c.severity)}</span><span class="pill">ICE ${iceTotal(c)}</span>${low}</div><div class="title">${esc(c.problem)}</div><div class="hyp">${esc(c.hypothesis)}</div>${(c.verbatims||[]).slice(0,3).map(v=>`<div class="verb">${esc(v)}</div>`).join('')}<div class="tags"><span class="tag">${esc(c.primaryMetric||'')}</span><span class="tag">${esc(c.principle||'')}</span>${c.surface?`<span class="tag">${esc(c.surface)}</span>`:''}</div><div class="foot"><div class="actions"><button class="btn small" data-act="brief">Draft brief</button><button class="btn small" data-act="variants">Variants</button></div><button class="btn small" data-act="roadmap">Add to roadmap</button></div></div>`}
-document.addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(!b)return;const card=b.closest('.card');const i=+card.dataset.i,src=card.dataset.src;const c=src==='synth'?synthResult.clusters[i]:src==='audit'?auditResult.issues[i]:null;if(!c)return;
-  if(b.dataset.act==='brief'){loadBrief(c);show('brief')}else if(b.dataset.act==='variants'){$('varHyp').value=c.hypothesis;show('variants')}else if(b.dataset.act==='roadmap'){addToRoadmap(c);b.textContent='Added';b.disabled=true}});
-function loadBrief(c){selectedHyp=c;$('briefHyp').value=c.hypothesis||'';$('briefSurface').value=c.surface||'';$('briefMetric').value=c.primaryMetric||'';$('briefGuard').value=c.guardrailMetric||''}
+function hypCard(c,i,src){const low=c.lowConfidence?'<span class="pill warn">Low confidence</span>':'';const ev=c.evidence==='both'?'<span class="pill good">Research + page</span>':c.evidence==='research'?'<span class="pill">Research only</span>':c.evidence==='page'?'<span class="pill">Page only</span>':'';return `<div class="card" data-i="${i}" data-src="${src}"><div class="meta"><span class="pill accent">Priority ${esc(c.priority)}</span><span class="pill">F${esc(c.frequency)} × S${esc(c.severity)}</span><span class="pill">ICE ${iceTotal(c)}</span>${low}${ev}</div><div class="title">${esc(c.problem)}</div><div class="hyp">${esc(c.hypothesis)}</div>${(c.verbatims||[]).slice(0,3).map(v=>`<div class="verb">${esc(v)}</div>`).join('')}<div class="tags"><span class="tag">${esc(c.primaryMetric||'')}</span><span class="tag">${esc(c.principle||'')}</span>${c.surface?`<span class="tag">${esc(c.surface)}</span>`:''}</div><div class="foot"><div class="actions"><button class="btn small" data-act="brief">Draft brief</button><button class="btn small" data-act="variants">Variants</button></div><button class="btn small" data-act="roadmap">Add to roadmap</button></div></div>`}
+document.addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(!b)return;const card=b.closest('.card');const i=+card.dataset.i,src=card.dataset.src;const c=src==='synth'?synthResult.clusters[i]:src==='audit'?auditResult.issues[i]:src==='fuse'?fuseResult.items[i]:null;if(!c)return;
+  if(b.dataset.act==='brief'){setIdea(null);loadBrief(c);show('brief')}else if(b.dataset.act==='variants'){setIdea(null);$('varHyp').value=c.hypothesis;show('variants')}else if(b.dataset.act==='roadmap'){addToRoadmap(c);b.textContent='Added';b.disabled=true}});
+function loadBrief(c){selectedHyp=c;$('briefHyp').value=c.hypothesis||c.title||'';$('briefSurface').value=c.surface||'';$('briefMetric').value=c.primaryMetric||'';$('briefGuard').value=c.guardrailMetric||''}
 $('synthCopy').onclick=()=>copy(synthMd());
 function synthMd(){if(!synthResult)return '';const rows=synthResult.clusters.map(c=>`| ${c.problem} | ${c.frequency} | ${c.severity} | ${c.priority} | ${c.hypothesis} | ${c.primaryMetric} | ${iceTotal(c)} |`).join('\n');return `# Research synthesis: ${$('synthCompany').value}\n\n| Problem | F | S | Priority | Hypothesis | Primary metric | ICE |\n|---|---|---|---|---|---|---|\n${rows}\n\n**Test first:** ${synthResult.firstTest}`}
-$('synthAddAll').onclick=()=>{synthResult.clusters.forEach(addToRoadmap);$('synthStatus').textContent='Added to roadmap.'};
+$('synthToFuse').onclick=()=>show('fuse');
+$('synthAddAll').onclick=()=>{addManyToRoadmap(synthResult.clusters);$('synthStatus').textContent='Added to roadmap.'};
 
 /* ---------- 2 Audit ---------- */
-let auditResult=null;
+let auditResult=null,auditFiles=[];
 $('auditSample').onclick=()=>{$('auditUrl').value='https://example-weightcare.com/start';$('auditAd').value='Lose up to 15% of your body weight with clinician-led care';$('auditCopy').value=`Take control of your weight
 Personalised medical weight loss, delivered to your door
 Start your free assessment
@@ -449,11 +499,61 @@ Our clinicians are registered with the GMC
 FAQs: Is it safe? Who is eligible? What if I don't qualify?
 Read our 4,000 reviews
 Join today`};
-$('auditRun').onclick=async()=>{const copyTxt=$('auditCopy').value.trim();if(!copyTxt){$('auditStatus').textContent='Paste the page copy first.';return}
-  const prompt=`You are a senior CRO specialist auditing a landing page from its copy. Score the page 1-10 on five fixed heuristics: clarity (can a first-time visitor say what this is and for whom within 5 seconds), friction (effort and uncertainty on the path to the CTA), trust (specific, verifiable credibility signals), urgency (reason to act now without manipulation), messageMatch (continuity with the ad or source message the visitor saw). Then list the 4-7 most important issues. For each issue: the heuristic it falls under, the evidence (quote the copy), a hypothesis in exactly this form: "We believe that [change] for [segment] will [outcome] because [evidence]. We'll know this is true when [primary metric] moves by at least [MDE] with [guardrail metric] unchanged.", a primaryMetric, guardrailMetric, ICE 1-10 each, principle, severity 1-5, frequency 1-5 (how many visitors it plausibly affects), priority=frequency*severity.
+/* Uploads: HTML is reduced to its visible text; images are downscaled (tall screenshots cut into parts) and sent as pictures */
+const isHtmlFile=f=>/\.html?$/i.test(f.name)||f.type==='text/html';
+function htmlToText(html){const doc=new DOMParser().parseFromString(String(html).replace(/<br\s*\/?>/gi,'\n').replace(/<\/(p|div|li|h[1-6]|section|article|header|footer|main|nav|aside|tr|td|th|ul|ol|table|button|a|label|form|figcaption|blockquote|summary|option)>/gi,'$&\n'),'text/html');
+  doc.querySelectorAll('script,style,noscript,svg,template,iframe').forEach(n=>n.remove());doc.querySelectorAll('img[alt]').forEach(n=>{const a=n.getAttribute('alt').trim();if(a)n.replaceWith(doc.createTextNode(` [image: ${a}] `))});
+  const head=[];const t=(doc.title||'').trim();if(t)head.push('Page title: '+t);const d=doc.querySelector('meta[name="description"]');if(d&&d.getAttribute('content'))head.push('Meta description: '+d.getAttribute('content').trim());
+  return head.concat((doc.body?doc.body.textContent:'').split('\n').map(l=>l.replace(/\s+/g,' ').trim()).filter(Boolean)).join('\n')}
+function imageTiles(file,maxTiles=4){return new Promise((res,rej)=>{const u=URL.createObjectURL(file),im=new Image();
+  im.onload=()=>{URL.revokeObjectURL(u);const TILE=1568;let k=Math.min(1,1200/im.width);if(im.height*k>TILE*maxTiles)k=TILE*maxTiles/im.height;const W=Math.max(1,Math.round(im.width*k)),H=Math.max(1,Math.round(im.height*k)),n=Math.max(1,Math.ceil(H/TILE)),out=[];
+    for(let t=0;t<n;t++){const h=Math.min(TILE,H-t*TILE),c=document.createElement('canvas');c.width=W;c.height=h;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,h);g.drawImage(im,0,t*TILE/k,im.width,h/k,0,0,W,h);out.push(c.toDataURL('image/jpeg',0.72).split(',')[1])}res(out)};
+  im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('the browser could not read this image'))};im.src=u})}
+const MAX_IMAGE_PARTS=6;
+async function addAuditFiles(kind,files){for(const f of files){try{
+    if(isHtmlFile(f)){const text=htmlToText(await f.text());if(kind==='ad')$('auditAd').value=text.split('\n').join(' | ').slice(0,600);else $('auditCopy').value=($('auditCopy').value.trim()+'\n'+text).trim().slice(0,20000);$('auditStatus').textContent=`Read ${f.name} into the ${kind==='ad'?'ad':'page copy'} field.`}
+    else if(f.type.startsWith('image/')){const used=auditFiles.reduce((a,x)=>a+x.tiles.length,0);if(used>=MAX_IMAGE_PARTS){$('auditStatus').textContent=`Image limit reached (${MAX_IMAGE_PARTS} image parts). Remove one first.`;break}auditFiles.push({kind,name:f.name,tiles:(await imageTiles(f)).slice(0,MAX_IMAGE_PARTS-used)});$('auditStatus').textContent=''}
+    else $('auditStatus').textContent=`${f.name}: only HTML files and images can be uploaded.`}catch(e){$('auditStatus').textContent=`${f.name}: ${e.message}`}}
+  renderAuditChips()}
+function renderAuditChips(){$('auditChips').innerHTML=auditFiles.map((f,i)=>`<span class="chip">${f.kind==='ad'?'Ad':'Page'}: ${esc(f.name)}${f.tiles.length>1?` (${f.tiles.length} parts)`:''}<button type="button" data-chip="${i}" aria-label="Remove ${esc(f.name)}">×</button></span>`).join('')}
+$('auditChips').addEventListener('click',e=>{const b=e.target.closest('[data-chip]');if(b){auditFiles.splice(+b.dataset.chip,1);renderAuditChips()}});
+$('auditPageFile').onchange=e=>{addAuditFiles('page',[...e.target.files]);e.target.value=''};
+$('auditAdFile').onchange=e=>{addAuditFiles('ad',[...e.target.files]);e.target.value=''};
+$('auditRun').onclick=async()=>{const copyTxt=$('auditCopy').value.trim();const imgs=auditFiles.length>0;if(!copyTxt&&!auditFiles.some(f=>f.kind==='page')){$('auditStatus').textContent='Paste the page copy or upload the page first.';return}
+  if(auditFiles.reduce((a,f)=>a+f.tiles.reduce((x,t)=>x+t.length,0),0)>3600000){$('auditStatus').textContent='The images are too large to send together. Remove one and try again.';return}
+  const prompt=`You are a senior CRO specialist auditing a landing page from its copy${imgs?' and the attached images (judge layout, visual hierarchy, what sits above the fold and the imagery as well as the words)':''}. Score the page 1-10 on five fixed heuristics: clarity (can a first-time visitor say what this is and for whom within 5 seconds), friction (effort and uncertainty on the path to the CTA), trust (specific, verifiable credibility signals), urgency (reason to act now without manipulation), messageMatch (continuity with the ad or source message the visitor saw). Then list the 4-7 most important issues. For each issue: the heuristic it falls under, the evidence (quote the copy${imgs?', or say plainly what the image shows':''}), a hypothesis in exactly this form: "We believe that [change] for [segment] will [outcome] because [evidence]. We'll know this is true when [primary metric] moves by at least [MDE] with [guardrail metric] unchanged.", a primaryMetric, guardrailMetric, ICE 1-10 each, principle, severity 1-5, frequency 1-5 (how many visitors it plausibly affects), priority=frequency*severity.
 Return ONLY JSON: {"scores":{"clarity":0,"friction":0,"trust":0,"urgency":0,"messageMatch":0},"issues":[{"heuristic":"","problem":"","verbatims":["quoted copy"],"hypothesis":"","primaryMetric":"","guardrailMetric":"","ice":{"impact":0,"confidence":0,"ease":0},"principle":"","surface":"landing page","frequency":0,"severity":0,"priority":0}]}
-URL: ${$('auditUrl').value}\nAd/source message: ${$('auditAd').value||'(not given)'}\nPage copy:\n${copyTxt}`;
-  try{auditResult=await askJSON(prompt,$('auditStatus'));auditResult.issues=(auditResult.issues||[]).sort((a,b)=>b.priority-a.priority);$('auditOut').classList.remove('hidden');const s=auditResult.scores||{};$('auditScores').innerHTML=['clarity','friction','trust','urgency','messageMatch'].map(k=>stat(k.replace('messageMatch','message match'),(s[k]??'–')+'/10','')).join('');$('auditCards').innerHTML=auditResult.issues.map((c,i)=>hypCard(c,i,'audit')).join('');bank('audit',$('auditUrl').value||'page audit',{url:$('auditUrl').value,ad:$('auditAd').value,copy:copyTxt,result:auditResult})}catch(e){}};
+URL: ${$('auditUrl').value}\nAd/source message: ${$('auditAd').value||(auditFiles.some(f=>f.kind==='ad')?'(see the attached ad image)':'(not given)')}\nPage copy:\n${copyTxt||'(not pasted; read it from the page screenshots)'}`;
+  const content=[{type:'text',text:prompt}];auditFiles.forEach(f=>f.tiles.forEach((t,i)=>content.push({type:'text',text:`${f.kind==='ad'?'The AD or source creative the visitor saw':'Screenshot of the LANDING PAGE'} (${f.name})${f.tiles.length>1?`, part ${i+1} of ${f.tiles.length}, top to bottom`:''}:`},{type:'image',source:{type:'base64',media_type:'image/jpeg',data:t}})));
+  try{auditResult=await askJSON(imgs?[{role:'user',content}]:prompt,$('auditStatus'));auditResult.issues=(auditResult.issues||[]).sort((a,b)=>b.priority-a.priority);renderAudit();bank('audit',$('auditUrl').value||'page audit',{url:$('auditUrl').value,ad:$('auditAd').value,copy:copyTxt,files:auditFiles.map(f=>`${f.kind}: ${f.name}`),result:auditResult})}catch(e){}};
+function renderAudit(){$('auditOut').classList.remove('hidden');const s=auditResult.scores||{};$('auditScores').innerHTML=['clarity','friction','trust','urgency','messageMatch'].map(k=>stat(k.replace('messageMatch','message match'),(s[k]??'–')+'/10','')).join('');$('auditCards').innerHTML=(auditResult.issues||[]).map((c,i)=>hypCard(c,i,'audit')).join('')}
+$('auditToFuse').onclick=()=>show('fuse');
+
+/* ---------- 2b Fuse (synthesis + audit) ---------- */
+let fuseResult=null;
+const hasSynth=()=>!!(synthResult&&(synthResult.clusters||[]).length),hasAudit=()=>!!(auditResult&&(auditResult.issues||[]).length);
+function renderFuseSources(){$('fuseSources').innerHTML=stat('Research synthesis',hasSynth()?synthResult.clusters.length+' clusters':'Not run',hasSynth()?$('synthCompany').value:'run Synthesise, or reopen one from History')+stat('Page audit',hasAudit()?auditResult.issues.length+' issues':'Not run',hasAudit()?($('auditUrl').value||'page audit'):'run Page audit, or reopen one from History')}
+$('fuseRun').onclick=async()=>{renderFuseSources();if(!hasSynth()||!hasAudit()){$('fuseStatus').textContent='Run both Synthesise and Page audit first, or reopen them from History.';return}
+  const pick=c=>({problem:c.problem,heuristic:c.heuristic,verbatims:(c.verbatims||[]).slice(0,4),hypothesis:c.hypothesis,primaryMetric:c.primaryMetric,guardrailMetric:c.guardrailMetric,ice:c.ice,principle:c.principle,surface:c.surface,segment:c.segment,frequency:c.frequency,severity:c.severity});
+  const prompt=`You are a senior CRO / growth product manager. You have two independent sources on the same product: research clusters (what customers say and do) and a page audit (what the page itself gets wrong). Fuse them into one prioritised list. Apply this method exactly.
+1. Match each research cluster to any audit issue that describes the same failing job-to-be-done. Match on the underlying problem, never on shared words.
+2. Each match becomes ONE item with evidence "both". Its problem statement says who struggles, with what, and where on the page it happens. Keep the strongest customer verbatims and the quoted page copy together in verbatims, customer quotes first.
+3. Everything unmatched carries over unchanged in substance, with evidence "research" or "page".
+4. Scores: frequency and severity 1-5 as given in the sources; for a fused item take the higher of the two. ICE 1-10 each; for evidence "both", confidence is the higher source confidence plus 2, capped at 10. Never raise confidence for single-source items.
+5. One hypothesis per item in exactly this form: "We believe that [change] for [segment] will [outcome] because [evidence]. We'll know this is true when [primary metric] moves by at least [MDE] with [guardrail metric] unchanged." For fused items the change must be specific to the page element the audit named, and the because-clause must cite both sources.
+6. firstTest: which item to run first and why, in two sentences, preferring corroborated items unless a single-source item blocks purchase.
+Return ONLY JSON: {"items":[{"evidence":"both","problem":"","researchSource":"problem text of the matched research cluster or empty","pageSource":"problem text of the matched audit issue or empty","verbatims":[""],"hypothesis":"","primaryMetric":"","guardrailMetric":"","ice":{"impact":1,"confidence":1,"ease":1},"principle":"","surface":"","segment":"","frequency":1,"severity":1}],"firstTest":""}
+
+Company: ${$('synthCompany').value}\nPage: ${$('auditUrl').value||'(not given)'}
+Research clusters: ${JSON.stringify(synthResult.clusters.map(pick))}
+Page audit scores: ${JSON.stringify(auditResult.scores||{})}
+Page audit issues: ${JSON.stringify(auditResult.issues.map(pick))}`;
+  try{fuseResult=await askJSON(prompt,$('fuseStatus'));renderFuse();bank('fusion',`${$('synthCompany').value} + ${$('auditUrl').value||'page audit'}`,{result:fuseResult})}catch(e){}};
+function renderFuse(){const its=(fuseResult.items||[]).map(c=>({...c,priority:(+c.frequency||0)*(+c.severity||0)})).sort((a,b)=>(b.priority-a.priority)||((b.evidence==='both')-(a.evidence==='both')));fuseResult.items=its;$('fuseOut').classList.remove('hidden');const n=k=>its.filter(c=>c.evidence===k).length;
+  $('fuseStats').innerHTML=stat('Fused items',its.length,'hypotheses')+stat('Corroborated',n('both'),'seen in research and on the page')+stat('Research only',n('research'),'not visible in the page audit')+stat('Page only',n('page'),'no customer evidence yet');
+  $('fuseCards').innerHTML=its.map((c,i)=>hypCard(c,i,'fuse')).join('');$('fuseFirst').textContent=fuseResult.firstTest||''}
+$('fuseCopy').onclick=()=>{if(!fuseResult)return;const label={both:'Research + page',research:'Research only',page:'Page only'};copy(`# Fused insights: ${$('synthCompany').value}\n\n| Evidence | Problem | F | S | Priority | Hypothesis | Primary metric | ICE |\n|---|---|---|---|---|---|---|---|\n${fuseResult.items.map(c=>`| ${label[c.evidence]||''} | ${c.problem} | ${c.frequency} | ${c.severity} | ${c.priority} | ${c.hypothesis} | ${c.primaryMetric} | ${iceTotal(c)} |`).join('\n')}\n\n**Test first:** ${fuseResult.firstTest||''}`)};
+$('fuseAddAll').onclick=()=>{if(!fuseResult)return;addManyToRoadmap(fuseResult.items);$('fuseStatus').textContent='Added to roadmap.'};
 
 /* ---------- 3 Calculator ---------- */
 function calcInputs(){return{base:+$('cBase').value/100,mde:+$('cMde').value/100,power:+$('cPower').value/100,alpha:+$('cAlpha').value/100,traffic:+$('cTraffic').value,arms:Math.max(2,+$('cArms').value||2)}}
@@ -477,7 +577,7 @@ $('briefRun').onclick=async()=>{const h=$('briefHyp').value.trim();if(!h){$('bri
   const prompt=`Write a pre-registered A/B test brief in Markdown. Be specific and commercial; no filler. Use exactly these H2 headings in order: Hypothesis; Change; Primary metric; Guardrail metrics; Pre-specified success criteria and decision rule; Pre-registered segments; Sample size and run time; Stop rule; Risks and dependencies; Owner and sign-off.
 Rules: the decision rule must name the MDE and say what happens if the CI includes zero, excludes zero but misses the MDE, or clears the MDE. Segments: at most three, each with a reason. Stop rule: no peeking before the planned sample unless a guardrail breaches; name the earliest valid read. Mark anything unknown as [TO CONFIRM].
 Hypothesis: ${h}\nSurface: ${$('briefSurface').value||'[TO CONFIRM]'}\nPrimary metric: ${$('briefMetric').value||'[TO CONFIRM]'}\nGuardrails: ${$('briefGuard').value||'[TO CONFIRM]'}\nCalculator: baseline ${fmtPct(c.base,2)}, MDE ${$('cMde').value}% relative, power ${$('cPower').value}%, alpha ${$('cAlpha').value}%, ${c.arms} arms, ${fmtN(n)} visitors per arm, ${fmtN(c.traffic)} visitors/day, ${days} days (round up to whole weeks, minimum 14 days).`;
-  $('briefOut').innerHTML='<p class="small">Writing…</p>';try{briefMd=await askText(prompt,$('briefStatus'),t=>{$('briefOut').innerHTML=md(t)});$('briefOut').innerHTML=md(briefMd);bank('brief',h,{hypothesis:h,markdown:briefMd})}catch(e){}};
+  $('briefOut').innerHTML='<p class="small">Writing…</p>';try{briefMd=await askText(prompt,$('briefStatus'),t=>{$('briefOut').innerHTML=md(t)});$('briefOut').innerHTML=md(briefMd);bank('brief',h,{hypothesis:h,markdown:briefMd});attach('brief',toolOutput('brief'))}catch(e){}};
 $('briefCopy').onclick=()=>copy(briefMd);
 $('briefToReadout').onclick=()=>{if(briefMd)$('roBrief').value=briefMd;else $('roBrief').value=$('briefHyp').value;show('readout')};
 
@@ -487,29 +587,113 @@ $('varRun').onclick=async()=>{const h=$('varHyp').value.trim();if(!h){$('varStat
   const prompt=`You are a direct-response copywriter working inside an experimentation programme. For the hypothesis below, write three variants, each with headline (max 9 words), subhead (max 18 words), cta (max 4 words). Each variant uses a different persuasion principle and targets a named segment. Give a one-line rationale. Then pick which to run first and why, in one sentence. No exclamation marks, no fake claims, no numbers that aren't in the hypothesis.
 Hypothesis: ${h}\nCurrent copy: ${$('varCurrent').value||'(not given)'}
 Return ONLY JSON: {"variants":[{"name":"A","headline":"","subhead":"","cta":"","principle":"","segment":"","rationale":""}],"runFirst":"A","why":""}`;
-  try{variants=await askJSON(prompt,$('varStatus'));renderVariants();$('varScreen').disabled=false;$('personaOut').classList.add('hidden');bank('variants',h,{hypothesis:h,result:variants})}catch(e){}};
-function renderVariants(){const v=variants.variants||[];$('varOut').classList.remove('hidden');$('varOut').innerHTML=`<table class="data"><thead><tr><th></th><th>Headline</th><th>Subhead</th><th>CTA</th><th>Principle</th><th>Segment</th><th>Rationale</th></tr></thead><tbody>${v.map(x=>`<tr><td><strong>${esc(x.name)}</strong>${variants.runFirst===x.name?' <span class="pill accent">Run first</span>':''}</td><td>${esc(x.headline)}</td><td>${esc(x.subhead)}</td><td>${esc(x.cta)}</td><td>${esc(x.principle)}</td><td>${esc(x.segment)}</td><td class="small">${esc(x.rationale)}</td></tr>`).join('')}</tbody></table><p class="small" style="margin-top:8px"><strong>Why ${esc(variants.runFirst)} first:</strong> ${esc(variants.why)}</p>`}
+  try{variants=await askJSON(prompt,$('varStatus'));renderVariants();$('varScreen').disabled=false;$('personaOut').classList.add('hidden');bank('variants',h,{hypothesis:h,result:variants});attach('variants',toolOutput('variants'))}catch(e){}};
+function renderVariants(){const v=variants.variants||[];$('varOut').classList.remove('hidden');$('varOut').innerHTML=`<table class="data"><thead><tr><th></th><th>Headline</th><th>Subhead</th><th>CTA</th><th>Principle</th><th>Segment</th><th>Rationale</th></tr></thead><tbody>${v.map(x=>`<tr><td><strong>${esc(x.name)}</strong>${variants.runFirst===x.name?' <span class="pill accent">Run first</span>':''}</td><td>${esc(x.headline)}</td><td>${esc(x.subhead)}</td><td>${esc(x.cta)}</td><td>${esc(x.principle)}</td><td>${esc(x.segment)}</td><td class="small">${esc(x.rationale)}</td></tr>`).join('')}</tbody></table><p class="small" style="margin-top:8px"><strong>Why ${esc(variants.runFirst)} first:</strong> ${esc(variants.why)}</p>`;renderBuildCopy()}
 $('varScreen').onclick=async()=>{if(!variants)return;const research=$('synthInput').value.trim().slice(0,6000)||'(no research inputs loaded; build personas from the hypothesis segment only and say so)';
   const prompt=`Build 4 customer personas grounded ONLY in the research verbatims below (name, one-line situation, main anxiety, what would convince them). Then have each persona rank the variants 1-3 with a one-line reason in their voice. Give a combined ranking with the vote tally. Finish with a two-sentence caveat that this is a prioritisation filter and not evidence; the real test decides.
 Research verbatims:\n${research}\n\nVariants: ${JSON.stringify(variants.variants)}
 Return ONLY JSON: {"personas":[{"name":"","situation":"","anxiety":"","convincer":"","ranking":["A","B","C"],"reason":""}],"combined":[{"name":"A","points":0}],"caveat":""}`;
   try{const r=await askJSON(prompt,$('varStatus'));$('personaOut').classList.remove('hidden');$('personaOut').innerHTML=`<h3>Persona pre-screen</h3><div class="summary-row">${(r.combined||[]).sort((a,b)=>b.points-a.points).map((c,i)=>`<span class="pill ${i===0?'accent':''}">${esc(c.name)}: ${esc(c.points)} pts</span>`).join('')}</div><div class="cards">${(r.personas||[]).map(p=>`<div class="card"><div class="title">${esc(p.name)}</div><div class="small">${esc(p.situation)}</div><div><strong>Anxiety:</strong> ${esc(p.anxiety)}</div><div><strong>Would convince them:</strong> ${esc(p.convincer)}</div><div class="meta">${(p.ranking||[]).map((v,i)=>`<span class="pill ${i===0?'good':''}">${i+1}. ${esc(v)}</span>`).join('')}</div><div class="verb">${esc(p.reason)}</div></div>`).join('')}</div><p class="note">${esc(r.caveat)}</p>`}catch(e){}};
 
+/* ---------- 5b Build the variant page from the control ---------- */
+let build=null; // {name, html, edits:[{find,replace,why,ok}], summary, variantHtml, copyVariant, truncated}
+function renderBuildCopy(){const v=(variants&&variants.variants)||[];const cur=$('buildCopy').value;$('buildCopy').innerHTML='<option value="">Let the model decide from the hypothesis</option>'+v.map(x=>`<option value="${esc(x.name)}">${esc(x.name)}: ${esc(x.headline)}</option>`).join('');const want=v.some(x=>x.name===cur)?cur:(variants&&v.some(x=>x.name===variants.runFirst)?variants.runFirst:'');$('buildCopy').value=want}
+$('buildFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const html=await f.text();if(build&&build.edits&&!build.html){build.html=html;build.name=f.name;applyBuild()}else build={name:f.name,html,edits:null,summary:'',variantHtml:''};$('buildStatus').textContent='';renderBuild()};
+/* What the model reads: the control without script, style and SVG bodies, comments or embedded data */
+function slimHtml(html){return html.replace(/<!--[\s\S]*?-->/g,'').replace(/(<script\b[^>]*>)[\s\S]*?(<\/script>)/gi,'$1$2').replace(/(<style\b[^>]*>)[\s\S]*?(<\/style>)/gi,'$1$2').replace(/(<svg\b[^>]*>)[\s\S]*?(<\/svg>)/gi,'$1$2').replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+\/=]+/gi,'data:removed').replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n')}
+const reEsc=t=>t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function applyBuild(){if(!build||!build.edits)return;let out=build.html||'';build.edits.forEach(ed=>{ed.ok=false;if(!out||!ed.find)return;let i=out.indexOf(ed.find),len=ed.find.length;
+    if(i<0){try{const m=new RegExp(ed.find.trim().split(/\s+/).map(reEsc).join('\\s+')).exec(out);if(m){i=m.index;len=m[0].length}}catch(e){}}
+    if(i>=0){out=out.slice(0,i)+ed.replace+out.slice(i+len);ed.ok=true}});build.variantHtml=build.html?out:''}
+function withBase(html){const b=$('buildBase').value.trim();if(!/^https?:\/\//i.test(b))return html;const tag=`<base href="${esc(b)}">`;return /<head[^>]*>/i.test(html)?html.replace(/<head[^>]*>/i,m=>m+tag):tag+html}
+function renderBuild(){const has=!!(build&&build.edits);$('buildOut').classList.toggle('hidden',!has);$('buildDownload').disabled=$('buildCopyHtml').disabled=!(build&&build.variantHtml);
+  $('buildFileName').textContent=!build?'No control uploaded':build.html?`${build.name} · ${fmtN(Math.max(1,build.html.length/1024))} KB`:`${build.name} is not loaded. Upload it again to preview and download.`;if(!has)return;
+  const rows=build.edits.map((e,i)=>`<tr><td class="mono">${i+1}</td><td><span class="pill ${e.ok?'good':'warn'}">${e.ok?'Applied':build.html?'Not found':'Needs control'}</span></td><td>${esc(e.why||'')}</td><td><code class="diff">${esc(e.find)}</code></td><td><code class="diff">${esc(e.replace)}</code></td></tr>`).join('');
+  $('buildOut').innerHTML=`<h3>Variant page${build.copyVariant?` · copy variant ${esc(build.copyVariant)}`:''}</h3><p>${esc(build.summary)}</p>${build.truncated?'<p class="note">The control was too large to send in full, so only the first part of the page was considered.</p>':''}<div class="tablewrap"><table class="data"><thead><tr><th>#</th><th>Status</th><th>Why</th><th>Control</th><th>Variant</th></tr></thead><tbody>${rows}</tbody></table></div>${build.variantHtml?'<div class="previews"><div><p class="small">Control</p><iframe id="buildFrameA" sandbox="" title="Control preview"></iframe></div><div><p class="small">Variant</p><iframe id="buildFrameB" sandbox="" title="Variant preview"></iframe></div></div><p class="small">Previews run with scripts switched off, so anything the page builds with JavaScript will be missing. Open the downloaded file in a browser before building the test.</p>':''}`;
+  if(build.variantHtml){$('buildFrameA').srcdoc=withBase(build.html);$('buildFrameB').srcdoc=withBase(build.variantHtml)}}
+$('buildBase').addEventListener('change',renderBuild);
+$('buildRun').onclick=async()=>{const h=$('varHyp').value.trim();if(!h){$('buildStatus').textContent='Add a hypothesis first.';return}if(!build||!build.html){$('buildStatus').textContent='Upload the control page HTML first.';return}
+  const LIMIT=150000;const slim=slimHtml(build.html);const cut=slim.length>LIMIT;const cv=((variants&&variants.variants)||[]).find(x=>x.name===$('buildCopy').value);
+  let briefTxt='';const idea=currentIdea();if(idea){const art=await artGet(idea.id);briefTxt=(art&&art.brief&&art.brief.markdown)||''}if(!briefTxt)briefTxt=briefMd;
+  const prompt=`You are a CRO developer preparing the variant arm of an A/B test. Below is the HTML of the control page. Produce the smallest set of edits that implements the change described by the hypothesis, the brief and the copy variant (where given). Change only what the test needs and leave everything else alone.
+Return ONLY JSON: {"summary":"two sentences: what changed on the page and why","edits":[{"find":"","replace":"","why":""}]}
+Rules for edits:
+- "find" is copied character for character from the control HTML, is specific enough to occur once, and is as short as it can be (one text run or one element, never more than about 400 characters).
+- "replace" is the complete replacement for that string. To insert something new, repeat the found string and put the new markup next to it.
+- Script, style and SVG bodies, comments and embedded data were removed from what you see. Never include a script, style, svg or comment in a find string; anchor on the text or tags beside them.
+- New content reuses the page's existing classes and inline styles so it matches the design. No scripts, no external resources, no tracking.
+- No claims, numbers or offers that are not in the hypothesis, the brief, the copy variant or the control itself.
+- At most 12 edits. "why" is one short sentence tying the edit to the hypothesis.
+- If the control lacks the element the hypothesis targets, say so in summary and return the closest sensible edits.
+Hypothesis: ${h}
+Copy variant to apply: ${cv?JSON.stringify({headline:cv.headline,subhead:cv.subhead,cta:cv.cta,principle:cv.principle,segment:cv.segment}):'(none chosen; write the copy the hypothesis calls for)'}
+Brief: ${briefTxt?briefTxt.slice(0,6000):'(none)'}
+Control HTML${cut?' (truncated)':''}:
+${slim.slice(0,LIMIT)}`;
+  try{const r=await askJSON(prompt,$('buildStatus'));build.edits=(r.edits||[]).filter(e=>e&&typeof e.find==='string'&&typeof e.replace==='string'&&e.find).slice(0,20);build.summary=r.summary||'';build.copyVariant=cv?cv.name:'';build.truncated=cut;applyBuild();renderBuild();
+    $('buildStatus').textContent=`${build.edits.filter(e=>e.ok).length} of ${build.edits.length} edits applied.`;bank('build',h,{hypothesis:h,summary:build.summary,edits:build.edits,controlName:build.name,copyVariant:build.copyVariant});if(await attach('build',toolOutput('build')))await saveControl()}catch(e){}};
+$('buildDownload').onclick=()=>{if(!build||!build.variantHtml)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([build.variantHtml],{type:'text/html'}));a.download=build.name.replace(/\.html?$/i,'')+'-variant.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+$('buildCopyHtml').onclick=()=>copy(build&&build.variantHtml);
+
 /* ---------- 6 Roadmap ---------- */
-const STATUSES=['idea','briefed','building','running','concluded'];
-function addToRoadmap(c){const items=store.cache.roadmap.slice();items.push({id:uid(),problem:c.problem,hypothesis:c.hypothesis,primaryMetric:c.primaryMetric||'',guardrailMetric:c.guardrailMetric||'',principle:c.principle||'',surface:c.surface||'',segment:c.segment||'',ice:c.ice||{impact:5,confidence:5,ease:5},priority:c.priority||0,status:'idea',created:new Date().toISOString()});save('roadmap',items)}
-function renderRoadmap(){const items=store.cache.roadmap;$('kanban').innerHTML=STATUSES.map(s=>{const its=items.filter(i=>i.status===s).sort((a,b)=>iceTotal(b)-iceTotal(a));return `<div class="col"><h3>${s}<span>${its.length}</span></h3>${its.map(i=>`<div class="card" data-id="${i.id}"><div class="meta"><span class="pill accent">ICE ${iceTotal(i)}</span><span class="pill">I${i.ice.impact} C${i.ice.confidence} E${i.ice.ease}</span></div><div class="hyp">${esc(i.hypothesis)}</div><div class="tags">${i.surface?`<span class="tag">${esc(i.surface)}</span>`:''}${i.principle?`<span class="tag">${esc(i.principle)}</span>`:''}</div><div class="foot"><select data-move="${i.id}">${STATUSES.map(x=>`<option ${x===i.status?'selected':''}>${x}</option>`).join('')}</select><div class="actions"><button class="btn small" data-rm-brief="${i.id}">Brief</button><button class="btn small" data-rm-del="${i.id}">×</button></div></div></div>`).join('')||'<p class="small">Nothing here</p>'}</div>`}).join('')}
+const STAGES=[['capture','Idea capture'],['triage','Triage and prioritisation'],['research','Research and hypothesis'],['brief','Brief'],['build','Design and build'],['qa','QA and pre-launch checks'],['live','Live'],['analysis','Analysis'],['conclusion','Conclusion'],['rollout','Rollout and learning']];
+const STAGE_KEYS=STAGES.map(s=>s[0]);
+const OLD_STAGE={idea:'research',briefed:'brief',building:'build',running:'live',concluded:'conclusion'}; // boards saved before the ten steps
+const stageOf=i=>STAGE_KEYS.includes(i.status)?i.status:(OLD_STAGE[i.status]||'capture');
+const stageLabel=k=>`${STAGE_KEYS.indexOf(k)+1}. ${STAGES[STAGE_KEYS.indexOf(k)][1]}`;
+const laterStage=(a,b)=>STAGE_KEYS.indexOf(b)>STAGE_KEYS.indexOf(a)?b:a;
+const stageOptions=sel=>STAGE_KEYS.map(k=>`<option value="${k}" ${k===sel?'selected':''}>${esc(stageLabel(k))}</option>`).join('');
+const ideaTitle=i=>i.title||i.hypothesis||i.problem||'Untitled idea';
+function ideaFrom(c,stage){return{id:uid(),title:c.title||'',problem:c.problem||'',hypothesis:c.hypothesis||'',notes:c.notes||'',primaryMetric:c.primaryMetric||'',guardrailMetric:c.guardrailMetric||'',principle:c.principle||'',surface:c.surface||'',segment:c.segment||'',ice:c.ice||{impact:5,confidence:5,ease:5},priority:c.priority||0,status:stage||(c.hypothesis?'research':'capture'),created:new Date().toISOString()}}
+function addToRoadmap(c,stage){const item=ideaFrom(c,stage);save('roadmap',store.cache.roadmap.concat([item]));return item}
+function addManyToRoadmap(list){save('roadmap',store.cache.roadmap.concat(list.map(c=>ideaFrom(c))))}
+function renderRoadmap(){const items=store.cache.roadmap;$('kanban').innerHTML=STAGE_KEYS.map(s=>{const its=items.filter(i=>stageOf(i)===s).sort((a,b)=>iceTotal(b)-iceTotal(a));return `<div class="col"><h3>${esc(stageLabel(s))}<span>${its.length}</span></h3>${its.map(i=>{const h=i.has||{},ice=i.ice||{};return `<div class="card${i.id===currentIdeaId?' selected':''}" data-id="${i.id}"><div class="meta"><span class="pill accent">ICE ${iceTotal(i)}</span><span class="pill">I${esc(ice.impact??'–')} C${esc(ice.confidence??'–')} E${esc(ice.ease??'–')}</span>${Object.keys(ART_LABEL).filter(k=>h[k]).map(k=>`<span class="pill good">${ART_LABEL[k]}</span>`).join('')}</div><div class="hyp">${esc(ideaTitle(i))}</div>${i.notes?`<div class="small">${esc(i.notes)}</div>`:''}<div class="tags">${i.surface?`<span class="tag">${esc(i.surface)}</span>`:''}${i.principle?`<span class="tag">${esc(i.principle)}</span>`:''}</div><div class="foot"><select data-move="${i.id}" aria-label="Step">${stageOptions(s)}</select><div class="actions"><button class="btn small" data-rm-open="${i.id}">Open</button><button class="btn small" data-rm-del="${i.id}" aria-label="Delete idea">×</button></div></div></div>`}).join('')||'<p class="small">Nothing here</p>'}</div>`}).join('');renderIdeaSels()}
 store.listeners.push(renderRoadmap);
 $('kanban').addEventListener('change',e=>{const id=e.target.dataset.move;if(!id)return;const items=store.cache.roadmap.map(i=>i.id===id?{...i,status:e.target.value}:i);save('roadmap',items)});
-$('kanban').addEventListener('click',e=>{const d=e.target.closest('[data-rm-del]'),b=e.target.closest('[data-rm-brief]');if(d){save('roadmap',store.cache.roadmap.filter(i=>i.id!==d.dataset.rmDel))}if(b){const i=store.cache.roadmap.find(x=>x.id===b.dataset.rmBrief);if(i){loadBrief(i);show('brief')}}});
-$('rmClear').onclick=()=>{if($('rmClear').textContent==='Really clear?'){save('roadmap',[]);$('rmClear').textContent='Clear board'}else{$('rmClear').textContent='Really clear?';setTimeout(()=>$('rmClear').textContent='Clear board',3000)}};
-$('rmAdd').onclick=()=>{const h=window.promptFallback('Hypothesis','We believe that …');if(!h)return;addToRoadmap({problem:'',hypothesis:h,ice:{impact:5,confidence:5,ease:5}})};
-window.promptFallback=function(label,ph){const v=$('briefHyp').value.trim();if(v)return v;show('brief');$('briefStatus').textContent='Write the hypothesis here, then press "Add hypothesis by hand" again on the roadmap.';return ''};
-$('rmNext').onclick=async()=>{const open=store.cache.roadmap.filter(i=>i.status==='idea'||i.status==='briefed');if(!open.length){$('rmStatus').textContent='No open hypotheses on the board.';return}
-  const scored=open.map(i=>({...i,risk:i.ice.impact*(11-i.ice.confidence),cheap:i.ice.ease})).sort((a,b)=>(b.risk*b.cheap)-(a.risk*a.cheap));
+$('kanban').addEventListener('click',e=>{const d=e.target.closest('[data-rm-del]'),o=e.target.closest('[data-rm-open]');if(d){const id=d.dataset.rmDel;if(id===currentIdeaId)setIdea(null);save('roadmap',store.cache.roadmap.filter(i=>i.id!==id));artSet(id,null);artSet(id+'-control',null)}if(o)openIdea(o.dataset.rmOpen)});
+$('rmClear').onclick=()=>{if($('rmClear').textContent==='Really clear?'){store.cache.roadmap.forEach(i=>{artSet(i.id,null);artSet(i.id+'-control',null)});setIdea(null);save('roadmap',[]);$('rmClear').textContent='Clear board'}else{$('rmClear').textContent='Really clear?';setTimeout(()=>$('rmClear').textContent='Clear board',3000)}};
+$('rmNewStage').innerHTML=stageOptions('capture');
+$('rmAddSave').onclick=()=>{const t=$('rmNewText').value.trim();if(!t){$('rmStatus').textContent='Write the idea first.';return}const isHyp=/^we believe/i.test(t);addToRoadmap({title:isHyp?'':t,hypothesis:isHyp?t:'',notes:$('rmNewNotes').value.trim()},$('rmNewStage').value);$('rmNewText').value='';$('rmNewNotes').value='';$('rmStatus').textContent=`Idea saved at "${stageLabel($('rmNewStage').value)}".`};
+$('rmNext').onclick=async()=>{const open=store.cache.roadmap.filter(i=>STAGE_KEYS.indexOf(stageOf(i))<STAGE_KEYS.indexOf('build'));if(!open.length){$('rmStatus').textContent='No ideas on the board that are still before the build step.';return}
+  const scored=open.map(i=>{const ice=i.ice||{impact:5,confidence:5,ease:5};return{...i,ice,hypothesis:ideaTitle(i),risk:ice.impact*(11-ice.confidence),cheap:ice.ease}}).sort((a,b)=>(b.risk*b.cheap)-(a.risk*a.cheap));
   const prompt=`You are sequencing an experimentation roadmap. Method: test the riskiest assumptions first (high impact, low confidence), validate cheaply before committing to big builds (high ease first among similar risk), and avoid running two tests on the same surface at once. Pre-computed risk score = impact*(11-confidence). Explain the recommended order for the top 3 in plain, specific sentences a stakeholder would accept, then one line on what you deliberately deferred and why. Max 140 words. Plain prose, no bullets.
-Hypotheses: ${JSON.stringify(scored.map(i=>({hypothesis:i.hypothesis,surface:i.surface,impact:i.ice.impact,confidence:i.ice.confidence,ease:i.ice.ease,risk:i.risk})))}`;
+Hypotheses: ${JSON.stringify(scored.map(i=>({hypothesis:i.hypothesis,step:stageLabel(stageOf(i)),surface:i.surface,impact:i.ice.impact,confidence:i.ice.confidence,ease:i.ice.ease,risk:i.risk})))}`;
   try{const t=await askText(prompt,$('rmStatus'));$('rmNextOut').classList.remove('hidden');$('rmNextOut').innerHTML=`<strong>Next up:</strong> ${esc(scored[0].hypothesis)}<br><br>${esc(t)}`}catch(e){}};
+
+/* ---------- Ideas: link what a tool produces to an idea on the roadmap ---------- */
+/* The roadmap item carries the step and which outputs exist; the outputs themselves live in their own store documents. */
+let currentIdeaId=lsGet('idea')||null,lastIdeaOpts=null;
+const ART_LABEL={brief:'Brief',variants:'Variants',build:'Built page',readout:'Read-out'};
+const TOOL_STAGE={brief:'brief',variants:'build',build:'build',readout:'analysis'};
+const currentIdea=()=>store.cache.roadmap.find(i=>i.id===currentIdeaId)||null;
+async function artGet(key){if(store.db){try{const snap=await store.db.doc('artifact/'+key).get();if(snap.exists)return snap.data()}catch(e){}}return lsGet('art.'+key)}
+async function artSet(key,data){if(data==null){try{localStorage.removeItem('gxt.art.'+key)}catch(e){}}else lsSet('art.'+key,data);if(store.db){try{if(data==null)await store.db.doc('artifact/'+key).delete();else await store.db.doc('artifact/'+key).set(data)}catch(e){}}}
+function setIdea(id){currentIdeaId=id||null;lsSet('idea',currentIdeaId);renderRoadmap()}
+function renderIdeaSels(){const linked=currentIdea();const opts='<option value="">Not linked</option>'+store.cache.roadmap.map(i=>`<option value="${i.id}" ${linked&&i.id===linked.id?'selected':''}>${esc(ideaTitle(i).slice(0,90))} · ${esc(stageLabel(stageOf(i)))}</option>`).join('');
+  if(opts!==lastIdeaOpts){lastIdeaOpts=opts;document.querySelectorAll('select.ideaSel').forEach(el=>{el.innerHTML=opts})}
+  document.querySelectorAll('[data-save-idea]').forEach(b=>{b.textContent=linked?'Save to linked idea':'Save as new idea'})}
+document.addEventListener('change',e=>{const el=e.target.closest('select.ideaSel');if(!el)return;setIdea(el.value);const i=currentIdea();if(!i)return;if(!$('briefHyp').value.trim())loadBrief(i);if(!$('varHyp').value.trim())$('varHyp').value=i.hypothesis||i.title||'';flash('Linked. Output from Brief, Variants and Read-out now saves to this idea.')});
+function toolOutput(kind){switch(kind){
+  case 'brief':return briefMd?{hypothesis:$('briefHyp').value.trim(),markdown:briefMd}:null;
+  case 'variants':return variants?{hypothesis:$('varHyp').value.trim(),result:variants}:null;
+  case 'build':return build&&build.edits?{hypothesis:$('varHyp').value.trim(),summary:build.summary,edits:build.edits.map(e=>({find:e.find,replace:e.replace,why:e.why})),controlName:build.name,copyVariant:build.copyVariant||''}:null;
+  case 'readout':return roMd?{brief:$('roBrief').value,arms:getArms(),markdown:roMd,verdict:roComputed?roComputed.verdict:''}:null}
+  return null}
+async function saveControl(){if(currentIdeaId&&build&&build.html&&build.html.length<800000)await artSet(currentIdeaId+'-control',{html:build.html,name:build.name,base:$('buildBase').value.trim()})}
+async function attach(kind,data){const id=currentIdeaId;if(!id||!data||!currentIdea())return false;const art=(await artGet(id))||{};art[kind]={...data,at:new Date().toISOString()};await artSet(id,art);
+  save('roadmap',store.cache.roadmap.map(i=>i.id===id?{...i,has:{...(i.has||{}),[kind]:true},status:laterStage(stageOf(i),TOOL_STAGE[kind])}:i));return true}
+const TOOL_HYP={brief:()=>$('briefHyp').value.trim(),variants:()=>$('varHyp').value.trim(),readout:()=>(($('roBrief').value.match(/We believe that[^\n]*/)||[''])[0]||$('roBrief').value.trim().slice(0,200))};
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-save-idea]');if(!b)return;const tool=b.dataset.saveIdea;let made=false;
+  if(!currentIdea()){const h=TOOL_HYP[tool]();if(!h){flash('Write the hypothesis first');return}const isBrief=tool==='brief';const item=addToRoadmap({hypothesis:h,surface:isBrief?$('briefSurface').value:'',primaryMetric:isBrief?$('briefMetric').value:'',guardrailMetric:isBrief?$('briefGuard').value:''},TOOL_STAGE[tool]);setIdea(item.id);made=true}
+  let n=0;for(const k of tool==='variants'?['variants','build']:[tool]){if(await attach(k,toolOutput(k))){if(k==='build')await saveControl();n++}}
+  flash(made?`Saved as a new idea at "${stageLabel(TOOL_STAGE[tool])}"`:n?'Saved to the linked idea':'Nothing new to save yet')});
+function resetTools(){briefMd='';$('briefOut').innerHTML='<p class="small">The brief appears here.</p>';variants=null;$('varOut').classList.add('hidden');$('personaOut').classList.add('hidden');$('varScreen').disabled=true;renderBuildCopy();build=null;renderBuild();roMd='';roComputed=null;$('roOut').innerHTML='<p class="small">The read-out appears here. Compute statistics first to see the strip above.</p>';$('roStatStrip').innerHTML='';$('roBrief').value='';$('roLearn').classList.add('hidden')}
+async function openIdea(id){setIdea(id);const i=currentIdea();if(!i)return;resetTools();loadBrief(i);$('varHyp').value=i.hypothesis||i.title||'';const art=(await artGet(id))||{};
+  if(art.brief){briefMd=art.brief.markdown||'';$('briefOut').innerHTML=md(briefMd);$('roBrief').value=briefMd}
+  if(art.variants){variants=art.variants.result;renderVariants();$('varScreen').disabled=false}
+  if(art.build){const c=await artGet(id+'-control');build={name:art.build.controlName||(c&&c.name)||'control.html',html:(c&&c.html)||'',edits:art.build.edits||[],summary:art.build.summary||'',copyVariant:art.build.copyVariant||'',variantHtml:''};if(c&&c.base)$('buildBase').value=c.base;applyBuild();renderBuild()}
+  if(art.readout){if(art.readout.brief)$('roBrief').value=art.readout.brief;if(art.readout.arms){setArms(art.readout.arms);computeRO()}roMd=art.readout.markdown||'';$('roOut').innerHTML=md(roMd)}
+  const n=STAGE_KEYS.indexOf(stageOf(i));show(art.readout&&n>=STAGE_KEYS.indexOf('analysis')?'readout':(art.variants||art.build)&&n>=STAGE_KEYS.indexOf('build')?'variants':'brief')}
 
 /* ---------- 7 Peeking guard ---------- */
 (function(){const d=new Date();d.setDate(d.getDate()-9);$('pkStart').value=d.toISOString().slice(0,10)})();
@@ -547,7 +731,7 @@ $('roRun').onclick=async()=>{const r=computeRO();if(!r)return;const brief=$('roB
 Rules: Headline is max 5 lines: one-line verdict (Ship / Don't ship / Iterate / Inconclusive) with the action, then the brief restated in two lines (hypothesis, primary metric, MDE, decision rule). Lead every result with the interval, e.g. "+2.1% (95% CI −0.4% to +4.6%)". Mark guardrails passed or breached. Only pre-registered segments count; anything else goes under a sub-heading "Exploratory (not pre-registered)" as future hypotheses. Carry the CI through to the annualised value. If the verdict deviates from the decision rule, say so explicitly. Under "Learnings to log" give 2-4 one-line learnings about users (not about the variant), each on its own line starting with "- " and ending with tags in square brackets like [surface: assessment] [principle: progressive disclosure] [segment: mobile] [outcome: win|loss|flat]. Never invent numbers; use only those supplied; mark gaps [MISSING: ...]. Plain, specific, commercial prose. A clean null is a valid outcome and goes in line one.
 Computed statistics (authoritative; do not recalculate): ${JSON.stringify({verdictByRule:r.verdict,arms:r.arms,srm:{chi2:+r.srm.stat.toFixed(3),p:+r.srm.p.toFixed(4),fail:r.srm.fail},baselineRate:+(r.base*100).toFixed(3)+'%',primary:{variant:main.name,controlRate:+(main.pA*100).toFixed(3)+'%',variantRate:+(main.pB*100).toFixed(3)+'%',absoluteLiftPts:+(main.abs*100).toFixed(3),relativeLift:+(main.rel*100).toFixed(2)+'%',ci95:[+(main.ciLow*100).toFixed(2)+'%',+(main.ciHigh*100).toFixed(2)+'%'],p:+main.p.toFixed(4),pHolm:+main.pAdj.toFixed(4)},otherArms:r.comps.slice(1).map(c=>({name:c.name,relativeLift:+(c.rel*100).toFixed(2)+'%',ci95:[+(c.ciLow*100).toFixed(2)+'%',+(c.ciHigh*100).toFixed(2)+'%'],pHolm:+c.pAdj.toFixed(4)})),mde:Math.round(r.mde*100)+'% relative',plannedPerArm:r.planned,smallestArm:r.minN,powerAchieved:isNaN(r.power)?null:Math.round(r.power*100)+'%',daysRun:r.days,annualisedValueGBP:{atCiLow:Math.round(r.annual.low),atCiHigh:Math.round(r.annual.high)}})}
 Dates: ${$('roStart').value||'[MISSING]'} to ${$('roEnd').value||'[MISSING]'}\nGuardrails: ${$('roGuard').value||'[MISSING: none supplied]'}\nDeviations, overlaps, segments: ${$('roDev').value||'none reported'}\n\nOriginal brief:\n${brief}`;
-  $('roOut').innerHTML='<p class="small">Writing…</p>';try{roMd=await askText(prompt,$('roStatus'),t=>{$('roOut').innerHTML=md(t)});$('roOut').innerHTML=md(roMd);extractLearnings(roMd);bank('readout',r.verdict+': '+(brief.match(/We believe that[^.]*\./)||['read-out'])[0].slice(0,110),{brief,arms:r.arms,markdown:roMd,strip:$('roStatStrip').innerHTML})}catch(e){}};
+  $('roOut').innerHTML='<p class="small">Writing…</p>';try{roMd=await askText(prompt,$('roStatus'),t=>{$('roOut').innerHTML=md(t)});$('roOut').innerHTML=md(roMd);extractLearnings(roMd);bank('readout',r.verdict+': '+(brief.match(/We believe that[^.]*\./)||['read-out'])[0].slice(0,110),{brief,arms:r.arms,markdown:roMd,strip:$('roStatStrip').innerHTML});attach('readout',toolOutput('readout'))}catch(e){}};
 $('roCopy').onclick=()=>copy(roMd);
 let pendingLearnings=[];
 function extractLearnings(text){const sec=text.split(/^## Learnings to log/m)[1];if(!sec)return;const lines=sec.split(/^## /m)[0].split('\n').filter(l=>/^\s*[-*] /.test(l));pendingLearnings=lines.map(l=>{const body=l.replace(/^\s*[-*] /,'');const tags={};body.replace(/\[(\w+):\s*([^\]]+)\]/g,(m,k,v)=>{tags[k]=v.trim();return ''});return{id:uid(),text:body.replace(/\s*\[[^\]]+\]/g,'').trim(),surface:tags.surface||'',principle:tags.principle||'',segment:tags.segment||'',outcome:tags.outcome||'',date:new Date().toISOString().slice(0,10),test:($('roBrief').value.match(/We believe that[^.]*\./)||[''])[0].slice(0,120)}}).filter(l=>l.text);
@@ -570,11 +754,13 @@ function renderHistory(){const q=($('hsSearch').value||'').toLowerCase();const i
 store.listeners.push(renderHistory);$('hsSearch').addEventListener('input',renderHistory);
 $('hsTable').addEventListener('click',e=>{const d=e.target.closest('[data-hs-del]'),o=e.target.closest('[data-hs-open]');if(d)save('history',store.cache.history.filter(h=>h.id!==d.dataset.hsDel));if(o){const h=store.cache.history.find(x=>x.id===o.dataset.hsOpen);if(h)reopen(h)}});
 $('hsClear').onclick=()=>{if($('hsClear').textContent==='Really clear?'){save('history',[]);$('hsClear').textContent='Clear history'}else{$('hsClear').textContent='Really clear?';setTimeout(()=>$('hsClear').textContent='Clear history',3000)}};
-function reopen(h){const p=h.payload||{};switch(h.kind){
+function reopen(h){const p=h.payload||{};setIdea(null);switch(h.kind){
   case 'synthesis':$('synthCompany').value=p.company||'';$('synthInput').value=p.inputs||'';synthResult=p.result;renderSynth();show('synth');break;
-  case 'audit':$('auditUrl').value=p.url||'';$('auditAd').value=p.ad||'';$('auditCopy').value=p.copy||'';auditResult=p.result;$('auditOut').classList.remove('hidden');const sc=auditResult.scores||{};$('auditScores').innerHTML=['clarity','friction','trust','urgency','messageMatch'].map(k=>stat(k.replace('messageMatch','message match'),(sc[k]??'–')+'/10','')).join('');$('auditCards').innerHTML=auditResult.issues.map((c,i)=>hypCard(c,i,'audit')).join('');show('audit');break;
+  case 'audit':$('auditUrl').value=p.url||'';$('auditAd').value=p.ad||'';$('auditCopy').value=p.copy||'';auditResult=p.result;renderAudit();show('audit');break;
+  case 'fusion':fuseResult=p.result;renderFuse();show('fuse');break;
   case 'brief':$('briefHyp').value=p.hypothesis||'';briefMd=p.markdown||'';$('briefOut').innerHTML=md(briefMd);show('brief');break;
   case 'variants':$('varHyp').value=p.hypothesis||'';variants=p.result;renderVariants();$('varScreen').disabled=false;show('variants');break;
+  case 'build':$('varHyp').value=p.hypothesis||'';build={name:p.controlName||'control.html',html:'',edits:p.edits||[],summary:p.summary||'',copyVariant:p.copyVariant||'',variantHtml:''};applyBuild();renderBuild();show('variants');break;
   case 'readout':$('roBrief').value=p.brief||'';if(p.arms)setArms(p.arms);roMd=p.markdown||'';$('roOut').innerHTML=md(roMd);if(p.strip)$('roStatStrip').innerHTML=p.strip;show('readout');break;}}
 
 /* ---------- Helpers ---------- */
