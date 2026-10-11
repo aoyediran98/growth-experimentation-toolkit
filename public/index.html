@@ -239,9 +239,13 @@ code.diff{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break
       <div class="field"><label for="briefGuard">Guardrails</label><input id="briefGuard" placeholder="e.g. refund rate, support contacts per order"></div>
     </div>
     <p class="small" id="briefCalcNote"></p>
-    <div class="actions"><button class="btn primary" id="briefRun">Draft brief</button><button class="btn small" id="briefToReadout">Use in read-out</button><button class="btn small" id="briefCopy">Copy as Markdown</button><span class="status" id="briefStatus"></span></div>
+    <div class="actions"><button class="btn primary" id="briefRun">Draft brief</button><button class="btn small" id="briefToReadout">Use in read-out</button><button class="btn small" id="briefEdit">Edit brief</button><button class="btn small" id="briefCopy">Copy as Markdown</button><span class="status" id="briefStatus"></span></div>
   </div>
   <div class="panel md" id="briefOut"><p class="small">The brief appears here.</p></div>
+  <div class="panel hidden" id="briefEditBox">
+    <div class="field"><label for="briefEditText">Edit the brief (Markdown: ## for headings, - for bullets, **bold**)</label><textarea id="briefEditText" style="min-height:420px;font-family:var(--mono);font-size:13px"></textarea></div>
+    <div class="actions"><button class="btn primary" id="briefEditSave">Save changes</button><button class="btn small" id="briefEditCancel">Cancel</button><span class="small">Saving updates the brief used by Read-out, Copy and the linked idea.</span></div>
+  </div>
 </section>
 
 <!-- 5 VARIANTS -->
@@ -573,12 +577,16 @@ function drawCalcChart(c){const W=640,H=220,L=50,R=16,T=14,B=34;const mdes=[];fo
 
 /* ---------- 4 Brief ---------- */
 let briefMd='';
-$('briefRun').onclick=async()=>{const h=$('briefHyp').value.trim();if(!h){$('briefStatus').textContent='Write or pick a hypothesis first.';return}const c=calcInputs();const n=sampleSize(c.base,c.mde,c.power,c.alpha,c.arms);const days=Math.ceil(n*c.arms/c.traffic);
+$('briefRun').onclick=async()=>{const h=$('briefHyp').value.trim();if(!h){$('briefStatus').textContent='Write or pick a hypothesis first.';return}setBriefEditing(false);const c=calcInputs();const n=sampleSize(c.base,c.mde,c.power,c.alpha,c.arms);const days=Math.ceil(n*c.arms/c.traffic);
   const prompt=`Write a pre-registered A/B test brief in Markdown. Be specific and commercial; no filler. Use exactly these H2 headings in order: Hypothesis; Change; Primary metric; Guardrail metrics; Pre-specified success criteria and decision rule; Pre-registered segments; Sample size and run time; Stop rule; Risks and dependencies; Owner and sign-off.
 Rules: the decision rule must name the MDE and say what happens if the CI includes zero, excludes zero but misses the MDE, or clears the MDE. Segments: at most three, each with a reason. Stop rule: no peeking before the planned sample unless a guardrail breaches; name the earliest valid read. Mark anything unknown as [TO CONFIRM].
 Hypothesis: ${h}\nSurface: ${$('briefSurface').value||'[TO CONFIRM]'}\nPrimary metric: ${$('briefMetric').value||'[TO CONFIRM]'}\nGuardrails: ${$('briefGuard').value||'[TO CONFIRM]'}\nCalculator: baseline ${fmtPct(c.base,2)}, MDE ${$('cMde').value}% relative, power ${$('cPower').value}%, alpha ${$('cAlpha').value}%, ${c.arms} arms, ${fmtN(n)} visitors per arm, ${fmtN(c.traffic)} visitors/day, ${days} days (round up to whole weeks, minimum 14 days).`;
   $('briefOut').innerHTML='<p class="small">Writing…</p>';try{briefMd=await askText(prompt,$('briefStatus'),t=>{$('briefOut').innerHTML=md(t)});$('briefOut').innerHTML=md(briefMd);bank('brief',h,{hypothesis:h,markdown:briefMd});attach('brief',toolOutput('brief'))}catch(e){}};
 $('briefCopy').onclick=()=>copy(briefMd);
+function setBriefEditing(on){$('briefEditBox').classList.toggle('hidden',!on);$('briefOut').classList.toggle('hidden',on);if(on){$('briefEditText').value=briefMd;$('briefEditText').focus()}}
+$('briefEdit').onclick=()=>setBriefEditing($('briefEditBox').classList.contains('hidden'));
+$('briefEditCancel').onclick=()=>setBriefEditing(false);
+$('briefEditSave').onclick=async()=>{const t=$('briefEditText').value.trim();if(!t){$('briefStatus').textContent='The brief is empty. Write something or press Cancel.';return}briefMd=t;$('briefOut').innerHTML=md(briefMd);setBriefEditing(false);$('briefStatus').textContent='';const h=$('briefHyp').value.trim();bank('brief',(h||'Brief')+' (edited)',{hypothesis:h,markdown:briefMd});flash(await attach('brief',toolOutput('brief'))?'Brief updated and saved to the linked idea':'Brief updated')};
 $('briefToReadout').onclick=()=>{if(briefMd)$('roBrief').value=briefMd;else $('roBrief').value=$('briefHyp').value;show('readout')};
 
 /* ---------- 5 Variants ---------- */
@@ -687,7 +695,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-save
   if(!currentIdea()){const h=TOOL_HYP[tool]();if(!h){flash('Write the hypothesis first');return}const isBrief=tool==='brief';const item=addToRoadmap({hypothesis:h,surface:isBrief?$('briefSurface').value:'',primaryMetric:isBrief?$('briefMetric').value:'',guardrailMetric:isBrief?$('briefGuard').value:''},TOOL_STAGE[tool]);setIdea(item.id);made=true}
   let n=0;for(const k of tool==='variants'?['variants','build']:[tool]){if(await attach(k,toolOutput(k))){if(k==='build')await saveControl();n++}}
   flash(made?`Saved as a new idea at "${stageLabel(TOOL_STAGE[tool])}"`:n?'Saved to the linked idea':'Nothing new to save yet')});
-function resetTools(){briefMd='';$('briefOut').innerHTML='<p class="small">The brief appears here.</p>';variants=null;$('varOut').classList.add('hidden');$('personaOut').classList.add('hidden');$('varScreen').disabled=true;renderBuildCopy();build=null;renderBuild();roMd='';roComputed=null;$('roOut').innerHTML='<p class="small">The read-out appears here. Compute statistics first to see the strip above.</p>';$('roStatStrip').innerHTML='';$('roBrief').value='';$('roLearn').classList.add('hidden')}
+function resetTools(){briefMd='';setBriefEditing(false);$('briefOut').innerHTML='<p class="small">The brief appears here.</p>';variants=null;$('varOut').classList.add('hidden');$('personaOut').classList.add('hidden');$('varScreen').disabled=true;renderBuildCopy();build=null;renderBuild();roMd='';roComputed=null;$('roOut').innerHTML='<p class="small">The read-out appears here. Compute statistics first to see the strip above.</p>';$('roStatStrip').innerHTML='';$('roBrief').value='';$('roLearn').classList.add('hidden')}
 async function openIdea(id){setIdea(id);const i=currentIdea();if(!i)return;resetTools();loadBrief(i);$('varHyp').value=i.hypothesis||i.title||'';const art=(await artGet(id))||{};
   if(art.brief){briefMd=art.brief.markdown||'';$('briefOut').innerHTML=md(briefMd);$('roBrief').value=briefMd}
   if(art.variants){variants=art.variants.result;renderVariants();$('varScreen').disabled=false}
@@ -758,7 +766,7 @@ function reopen(h){const p=h.payload||{};setIdea(null);switch(h.kind){
   case 'synthesis':$('synthCompany').value=p.company||'';$('synthInput').value=p.inputs||'';synthResult=p.result;renderSynth();show('synth');break;
   case 'audit':$('auditUrl').value=p.url||'';$('auditAd').value=p.ad||'';$('auditCopy').value=p.copy||'';auditResult=p.result;renderAudit();show('audit');break;
   case 'fusion':fuseResult=p.result;renderFuse();show('fuse');break;
-  case 'brief':$('briefHyp').value=p.hypothesis||'';briefMd=p.markdown||'';$('briefOut').innerHTML=md(briefMd);show('brief');break;
+  case 'brief':setBriefEditing(false);$('briefHyp').value=p.hypothesis||'';briefMd=p.markdown||'';$('briefOut').innerHTML=md(briefMd);show('brief');break;
   case 'variants':$('varHyp').value=p.hypothesis||'';variants=p.result;renderVariants();$('varScreen').disabled=false;show('variants');break;
   case 'build':$('varHyp').value=p.hypothesis||'';build={name:p.controlName||'control.html',html:'',edits:p.edits||[],summary:p.summary||'',copyVariant:p.copyVariant||'',variantHtml:''};applyBuild();renderBuild();show('variants');break;
   case 'readout':$('roBrief').value=p.brief||'';if(p.arms)setArms(p.arms);roMd=p.markdown||'';$('roOut').innerHTML=md(roMd);if(p.strip)$('roStatStrip').innerHTML=p.strip;show('readout');break;}}
