@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ideation Room</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: session header with stage stepper, one stage panel at a time; participants' own contributions are always editable, everything else is read-only unless facilitator. */
+:root{--bg:#f6f5f2;--panel:#fff;--fg:#1c1f22;--muted:#5f6670;--line:#dcdad3;--soft:#eeece6;--accent:#0b6e70;--accent-fg:#fff;--accent-soft:#dff0ef;--good:#1f7a3a;--warn:#b46a00;--bad:#b3261e;--good-soft:#e2f2e6;--warn-soft:#fbeedb;--bad-soft:#f9e0de;--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;padding-block:0 40px;padding-inline:16px;max-width:1240px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}h1{font-size:22px;font-weight:600}h2{font-size:17px;font-weight:600}
+h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p{margin:0}
+header{padding-block:16px 10px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:center}
+header .sub{color:var(--muted);font-size:13px}
+.stepper{display:flex;gap:4px;flex-wrap:wrap;padding-block:12px}
+.stepper button{all:unset;cursor:pointer;padding:6px 12px;border-radius:999px;font-size:13px;font-weight:500;border:1px solid var(--line);white-space:nowrap}
+.stepper button:hover{background:var(--soft)}.stepper button:focus-visible{outline:2px solid var(--accent)}
+.stepper button[aria-current="page"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.stepper button .n{font-family:var(--mono);font-size:11px;opacity:.7;margin-right:6px}
+section.stage{display:none;flex-direction:column;gap:14px}section.stage.active{display:flex}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}.row>*{min-width:0}
+.field{display:flex;flex-direction:column;gap:3px;flex:1 1 160px}.field label{font-size:12px;font-weight:500;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+textarea{min-height:90px;resize:vertical;font-size:14px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+input[type=number]{font-family:var(--mono)}
+.btn{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:7px 12px}
+.btn:hover{background:var(--soft)}.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}.btn.small{padding:4px 9px;font-size:13px;font-weight:500}.btn:disabled{opacity:.5;cursor:default}
+.btn.danger{color:var(--bad)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.status{font-size:13px;color:var(--muted)}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.accent{background:var(--accent-soft);color:var(--accent)}
+.pill.t-marketing{background:#fbe7d6;color:#8a4a0e}.pill.t-product{background:#e3e7fb;color:#2d3e9a}.pill.t-cro{background:var(--accent-soft);color:var(--accent)}.pill.t-design{background:#f6e0f1;color:#8a2a6f}.pill.t-engineering{background:#e4f0e6;color:#1f6b36}.pill.t-other{background:var(--soft);color:var(--muted)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill.t-marketing{background:#3d2a14;color:#f0b35a}:root:not([data-theme="light"]) .pill.t-product{background:#22284a;color:#9fb0ff}:root:not([data-theme="light"]) .pill.t-design{background:#3c1f36;color:#f0a0dc}:root:not([data-theme="light"]) .pill.t-engineering{background:#1c3324;color:#6fcf8a}}
+:root[data-theme="dark"] .pill.t-marketing{background:#3d2a14;color:#f0b35a}:root[data-theme="dark"] .pill.t-product{background:#22284a;color:#9fb0ff}:root[data-theme="dark"] .pill.t-design{background:#3c1f36;color:#f0a0dc}:root[data-theme="dark"] .pill.t-engineering{background:#1c3324;color:#6fcf8a}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:7px;background:var(--panel);min-width:0}
+.card .title{font-weight:600}.card .body{font-size:14px}.card .meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.card .foot{display:flex;flex-wrap:wrap;gap:6px;justify-content:space-between;align-items:center;margin-top:auto}
+.card.q-quant{border-left:3px solid #2d3e9a}.card.q-qual{border-left:3px solid #8a2a6f}.card.q-opinion{border-left:3px solid #8a4a0e}.card.q-image{border-left:3px solid var(--accent)}
+.verb{font-size:13px;color:var(--muted);border-left:2px solid var(--line);padding-left:8px}
+.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;white-space:nowrap}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+td input[type=number],td select{padding:3px 6px;font-size:13px;width:64px}
+.dots{display:flex;align-items:center;gap:6px}.dots .cnt{font-family:var(--mono);min-width:20px;text-align:center}
+.dots button{width:28px;height:28px;border-radius:50%;padding:0;font-weight:700}
+.bar{height:6px;background:var(--soft);border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent)}
+.imgs{display:flex;flex-wrap:wrap;gap:8px}.imgs figure{margin:0;width:160px;display:flex;flex-direction:column;gap:4px}.imgs img{width:100%;height:110px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}.imgs figcaption{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:6px;padding:8px 10px}
+.small{font-size:13px;color:var(--muted)}
+.hidden{display:none!important}
+.people{display:flex;flex-wrap:wrap;gap:6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.stat .v{font-family:var(--mono);font-size:18px;font-weight:500}
+.month{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--panel)}
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.month h3{color:var(--accent)}
+.mini{font-size:13px;padding:6px 8px;border-radius:6px;background:var(--soft)}
+.mini b{display:block;font-family:var(--mono);font-size:11px;color:var(--muted)}
+.lock{font-size:12px;color:var(--muted)}
+.code{font-family:var(--mono);font-size:12px;background:var(--soft);padding:2px 6px;border-radius:4px;word-break:break-all}
+.join{max-width:520px;margin:40px auto;display:flex;flex-direction:column;gap:14px}
+.list{display:flex;flex-direction:column;gap:6px}
+.list a{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;color:inherit;text-decoration:none}
+.list a:hover{background:var(--soft)}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.md{font-size:14px}.md h3{text-transform:none;letter-spacing:0;color:var(--fg);font-size:14px;margin:8px 0 2px}.md ul{margin:4px 0;padding-left:18px}
+</style>
+</head>
+<body>
+<nav class="suite-nav" aria-label="Growth suite"><a href="/" class="suite-brand">Growth Suite</a><a href="/" data-p="/">Toolkit</a><a href="/audit/" data-p="/audit/">UX audit</a><a href="/copy/" data-p="/copy/">Regulated copy</a><a href="/ideation/" data-p="/ideation/">Ideation room</a><a href="/pricing/" data-p="/pricing/">Pricing simulator</a></nav>
+<style>.suite-nav{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:8px 0 4px;font-size:13px}.suite-nav a{color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:999px;border:1px solid transparent}.suite-nav a:hover{background:var(--soft)}.suite-nav a[aria-current=page]{background:var(--accent-soft);color:var(--accent);font-weight:600}.suite-nav .suite-brand{font-weight:700;color:var(--fg);margin-right:6px;padding-left:0}</style>
+<script>(function(){const p=location.pathname.replace(/index\.html$/,'');document.querySelectorAll('.suite-nav a[data-p]').forEach(a=>{if(a.dataset.p===p)a.setAttribute('aria-current','page')})})();</script>
+
+<!-- HOME -->
+<div id="home" class="hidden">
+  <header><div><h1>Ideation Room</h1><p class="sub">Run A/B test ideation sessions: share the evidence, collect rough ideas from everyone, vote blind, turn ideas into hypotheses, prioritise impartially, plan the roadmap.</p></div><span class="pill" id="storePill">Storage: checking</span></header>
+  <div class="layout" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-top:16px">
+    <div class="panel"><h3>Start a session</h3>
+      <div class="field"><label for="nName">Session name</label><input id="nName" placeholder="e.g. Checkout ideation, October"></div>
+      <div class="field"><label for="nPage">Page or journey under review</label><input id="nPage" placeholder="e.g. Assessment start page, mobile, paid social"></div>
+      <div class="field"><label for="nGoal">Goal metric</label><input id="nGoal" placeholder="e.g. Assessment start rate"></div>
+      <div class="row"><div class="field"><label for="nFac">Your name (facilitator)</label><input id="nFac"></div><div class="field"><label for="nDots">Dots per voter</label><input id="nDots" type="number" value="5" min="1" max="20"></div></div>
+      <div class="actions"><button class="btn primary" id="nCreate">Create session</button><button class="btn" id="nSample">Load sample session</button><span class="status" id="nStatus"></span></div><p class="small">The sample is a finished ideation for a telehealth weight-management assessment page: five participants, evidence, insights, eight ideas with revealed votes and five scored hypotheses. Use it to walk the flow end to end.</p>
+    </div>
+    <div class="panel"><h3>Your sessions on this device</h3><div class="list" id="sessList"><span class="small">None yet.</span></div><p class="small">Participants join with the link you share; it carries no facilitator rights.</p></div>
+  </div>
+</div>
+
+<!-- JOIN -->
+<div id="joinView" class="hidden"><div class="join panel"><h2 id="jTitle">Join session</h2><p class="small" id="jSub"></p><div class="field"><label for="jName">Your name</label><input id="jName"></div><div class="field"><label for="jTeam">Team</label><select id="jTeam"><option>Marketing</option><option>Product</option><option>CRO</option><option>Design</option><option>Engineering</option><option>Other</option></select></div><div class="actions"><button class="btn primary" id="jGo">Join</button></div></div></div>
+
+<!-- SESSION -->
+<div id="app" class="hidden">
+<header>
+  <div><h1 id="sName"></h1><p class="sub" id="sSub"></p></div>
+  <div class="actions"><span class="pill accent" id="meBadge"></span><span class="pill" id="stagePill"></span><button class="btn small" id="shareBtn">Copy join link</button><a class="btn small" href="./" id="homeLink">All sessions</a></div>
+</header>
+<div class="stepper" id="stepper">
+  <button data-stage="context"><span class="n">1</span>Context</button>
+  <button data-stage="insights"><span class="n">2</span>Insights</button>
+  <button data-stage="ideas"><span class="n">3</span>Ideas &amp; votes</button>
+  <button data-stage="hyps"><span class="n">4</span>Hypotheses</button>
+  <button data-stage="prior"><span class="n">5</span>Prioritise</button>
+  <button data-stage="roadmap"><span class="n">6</span>Roadmap</button>
+</div>
+<div class="panel" style="margin-bottom:14px"><div class="row" style="align-items:center"><div><h3>In the room</h3><div class="people" id="people"></div></div><div class="actions" id="facControls"></div></div></div>
+
+<!-- 1 CONTEXT -->
+<section class="stage" id="st-context">
+  <div class="panel"><h2>Business context</h2><p class="small">What are we trying to move, what can't change, and what is the business worried about. The facilitator edits; everyone can read.</p>
+    <div class="row"><div class="field"><label for="cObjective">Objective</label><textarea id="cObjective" placeholder="What the business needs from this page in the next quarter"></textarea></div><div class="field"><label for="cConstraints">Constraints</label><textarea id="cConstraints" placeholder="Brand, legal, tech, timing: what we cannot touch"></textarea></div><div class="field"><label for="cConcerns">Concerns and open questions</label><textarea id="cConcerns" placeholder="One per line. Each becomes a tag ideas can address."></textarea></div></div>
+    <div class="actions fac"><button class="btn primary" id="cSave">Save context</button><button class="btn small" id="cSeed">Fill this session with sample data</button><span class="status" id="cStatus"></span></div>
+  </div>
+  <div class="panel"><h2>Page under review</h2>
+    <div class="row"><div class="field"><label for="cUrl">URL</label><input id="cUrl" placeholder="https://"></div></div>
+    <div class="field"><label for="cHtml">Page HTML or copy (paste the source, or just the visible text top to bottom)</label><textarea id="cHtml" style="min-height:120px"></textarea></div>
+    <div class="actions fac"><button class="btn small" id="cExtract">Extract visible copy from HTML</button><button class="btn small" id="cRender">Preview</button></div>
+    <iframe id="cFrame" class="hidden" sandbox="" style="width:100%;height:420px;border:1px solid var(--line);border-radius:6px;background:#fff"></iframe>
+  </div>
+  <div class="panel"><h2>Imagery</h2><p class="small">Ads driving traffic and screenshots of the page. Used for message-match analysis in Insights.</p>
+    <div class="actions fac"><label class="btn small" for="cImgAd">Add ad images</label><input id="cImgAd" type="file" accept="image/*" multiple class="hidden"><label class="btn small" for="cImgPage">Add page screenshots</label><input id="cImgPage" type="file" accept="image/*" multiple class="hidden"><span class="status" id="cImgStatus"></span></div>
+    <div class="imgs" id="cImgs"></div>
+  </div>
+</section>
+
+<!-- 2 INSIGHTS -->
+<section class="stage" id="st-insights">
+  <div class="panel"><h2>Evidence</h2><p class="small">Anyone can add. Quant: paste a CSV or a table (funnel steps, segments, test history). Qual: verbatims, research notes, support themes. Opinion: a view from the room, logged as an opinion so it is weighed as one.</p>
+    <div class="row"><div class="field" style="flex:0 1 160px"><label for="iKind">Kind</label><select id="iKind"><option value="quant">Quantitative</option><option value="qual">Qualitative</option><option value="opinion">Opinion</option></select></div><div class="field"><label for="iName">Label</label><input id="iName" placeholder="e.g. GA4 funnel, last 30 days"></div><div class="actions"><label class="btn small" for="iFile">Upload .csv / .txt</label><input id="iFile" type="file" accept=".csv,.txt,.tsv,.md" class="hidden"></div></div>
+    <div class="field"><label for="iText">Content</label><textarea id="iText"></textarea></div>
+    <div class="actions"><button class="btn primary" id="iAdd">Add evidence</button><span class="status" id="iStatus"></span></div>
+    <div class="cards" id="inputs"></div>
+  </div>
+  <div class="panel"><div class="row" style="align-items:center;justify-content:space-between"><h2>Insights</h2><div class="actions fac"><button class="btn primary" id="genInsights">Generate insights from evidence</button><button class="btn small" id="genImagery">Analyse imagery and message match</button><span class="status" id="genStatus"></span></div></div>
+    <p class="small">Each insight names its source so the room can challenge it. Add your own with the form, or edit any card.</p>
+    <div class="row"><div class="field" style="flex:0 1 160px"><label for="nsType">Type</label><select id="nsType"><option value="quant">Quant</option><option value="qual">Qual</option><option value="opinion">Opinion</option><option value="image">Imagery</option></select></div><div class="field"><label for="nsTitle">Insight</label><input id="nsTitle" placeholder="One sentence, specific"></div><div class="field"><label for="nsSource">Source</label><input id="nsSource" placeholder="Which evidence"></div><div class="actions"><button class="btn small" id="nsAdd">Add</button></div></div>
+    <div class="cards" id="insights"></div>
+  </div>
+</section>
+
+<!-- 3 IDEAS -->
+<section class="stage" id="st-ideas">
+  <div class="panel"><h2>Rough ideas</h2><p class="small">Half-formed is fine. Link an insight if one prompted it. Tick anonymous if you'd rather the room judged the idea, not the author; you can claim it later.</p>
+    <div class="row"><div class="field"><label for="idTitle">Idea</label><input id="idTitle" placeholder="e.g. Show who reviews the assessment before the first question"></div></div>
+    <div class="field"><label for="idBody">Why, and what it would change</label><textarea id="idBody" style="min-height:60px"></textarea></div>
+    <div class="row"><div class="field"><label for="idInsight">Prompted by</label><select id="idInsight"><option value="">(none)</option></select></div><div class="field"><label for="idConcern">Addresses concern</label><select id="idConcern"><option value="">(none)</option></select></div><label class="chk"><input type="checkbox" id="idAnon"> Post anonymously</label><div class="actions"><button class="btn primary" id="idAdd">Add idea</button></div></div>
+  </div>
+  <div class="panel"><div class="row" style="justify-content:space-between;align-items:center"><div><h2>Board</h2><p class="small" id="voteHelp"></p></div><div class="actions"><span class="pill" id="dotsLeft"></span></div></div>
+    <div class="cards" id="ideas"></div>
+  </div>
+</section>
+
+<!-- 4 HYPOTHESES -->
+<section class="stage" id="st-hyps">
+  <div class="panel"><div class="row" style="justify-content:space-between;align-items:center"><div><h2>Hypotheses</h2><p class="small">Ideas neatened into the standard form, duplicates merged, each tied to a metric and a surface. Edit anything; the author credit carries over.</p></div><div class="actions fac"><button class="btn primary" id="genHyps">Neaten ideas into hypotheses</button><span class="status" id="hStatus"></span></div></div>
+    <div class="cards" id="hyps"></div>
+  </div>
+</section>
+
+<!-- 5 PRIORITISE -->
+<section class="stage" id="st-prior">
+  <div class="panel"><h2>Prioritisation</h2><p class="small">PXL-style: objective yes/no criteria the whole room can verify, an ease score, and the vote share. Weights are visible so nobody can quietly tilt the table. The facilitator can ask for AI-suggested criteria, then confirms each one.</p>
+    <div class="tablewrap"><table id="wTable"></table></div>
+    <div class="actions fac"><button class="btn small" id="aiCriteria">Suggest criteria values</button><button class="btn small" id="saveWeights">Save weights</button><span class="status" id="pStatus"></span></div>
+  </div>
+  <div class="panel"><h2>Ranked</h2><div class="tablewrap"><table id="pTable"></table></div></div>
+</section>
+
+<!-- 6 ROADMAP -->
+<section class="stage" id="st-roadmap">
+  <div class="panel"><h2>Roadmap</h2><p class="small">Sequenced by score, with one test per surface at a time, into monthly slots.</p>
+    <div class="row"><div class="field" style="flex:0 1 160px"><label for="rCap">Tests per month</label><input id="rCap" type="number" value="4" min="1"></div><div class="field" style="flex:0 1 160px"><label for="rStart">Start month</label><input id="rStart" type="month"></div><div class="actions"><button class="btn primary" id="rBuild">Build roadmap</button><button class="btn small" id="rCopy">Copy as Markdown</button><button class="btn small" id="rCsv">Copy as CSV</button></div></div>
+    <div class="stats" id="rStats"></div>
+    <div class="months" id="months"></div>
+  </div>
+</section>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const ls={get(k){try{return JSON.parse(localStorage.getItem('ide.'+k)||'null')}catch(e){return null}},set(k,v){try{localStorage.setItem('ide.'+k,JSON.stringify(v))}catch(e){}}};
+async function post(url,body){if(window.__shimPost)return window.__shimPost(url,body);const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||r.statusText);return j}
+const store={op:(op,key,extra={})=>post('/api/store',{op,key,...extra}),get:k=>store.op('get',k).then(j=>j.value),set:(k,v)=>store.op('set',k,{value:v}),hset:(k,f,v)=>store.op('hset',k,{field:f,value:v}),hdel:(k,f)=>store.op('hdel',k,{field:f}),hgetall:k=>store.op('hgetall',k).then(j=>j.value||{}),sadd:(k,v)=>store.op('sadd',k,{value:v}),smembers:k=>store.op('smembers',k).then(j=>j.value||[]),mget:ks=>store.op('mget','x',{value:ks}).then(j=>j.value||[])};
+async function ai(input,{json=true,images=[]}={}){const j=await post('/api/ai',{input,json,images});return json?j.value:j.text}
+function flash(el,msg,ms=1800){el.textContent=msg;if(ms)setTimeout(()=>{if(el.textContent===msg)el.textContent=''},ms)}
+
+
+/* ---------- Sample data ---------- */
+async function seedSample(id,meta){const now=Date.now();const t=i=>new Date(now-(200-i)*60000).toISOString();const K2=(id,p)=>`s:${id}:${p}`;const h=(k,o)=>Promise.all(Object.entries(o).map(([f,v])=>store.hset(K2(id,k),f,v)));
+  const m={...meta,name:meta.name||'Assessment page ideation (sample)',page:'Assessment start page, mobile, paid social',goal:'Assessment start rate',status:'prioritised',dots:5,weights:DEFAULT_WEIGHTS};await store.set(`session:${id}`,m);
+  await store.set(K2(id,'context'),{objective:'Lift assessment start rate on the mobile landing page from 3.2% to 4% this quarter without raising support contacts per start.',constraints:'Prescription medicines cannot be named or shown (POM rules). No before/after imagery. Brand headline font and colour fixed. Engineering has one sprint of capacity this month.',concerns:'Visitors do not know a clinician is involved\nPrice is unclear until late in the flow\nTestimonials feel unrepresentative\nMobile CTA is below the fold',url:'https://example-weightcare.com/start',html:'Take control of your weight\nPersonalised medical weight loss, delivered to your door\nStart your free assessment\nTrusted by 50,000+ members\nHow it works: 1. Take the quiz 2. Clinician review 3. Medication delivered\nFrom £149/month\nOur clinicians are registered with the GMC\nFAQs: Is it safe? Who is eligible? What if I don’t qualify?\nRead our 4,000 reviews\nJoin today',images:[]});
+  await h('people',{Tola:{name:'Tola',team:'CRO',joined:t(0)},Sam:{name:'Sam',team:'Design',joined:t(1)},Priya:{name:'Priya',team:'Marketing',joined:t(2)},Dan:{name:'Dan',team:'Engineering',joined:t(3)},Maya:{name:'Maya',team:'Product',joined:t(4)}});
+  await h('inputs',{i1:{id:'i1',kind:'quant',name:'GA4 funnel, last 30 days, mobile paid social',text:'step,users,rate\nlanding,48200,100%\nscroll past hero,31300,65%\nCTA click,2890,6.0%\nquiz q1 answered,2410,5.0%\nquiz complete,1540,3.2%\naccount created,1210,2.5%',author:'Tola',team:'CRO',at:t(10)},i2:{id:'i2',kind:'quant',name:'Test history, this page',text:'test,variant,result,notes\nHero image swap,lifestyle photo,flat (+0.8% CI -3 to +4.6),ran 21 days\nSticky CTA on mobile,sticky bar,+6.1% CTA clicks (p 0.03),start rate +3.9% not significant\nPrice on hero,"from £149",-4.2% CTA clicks,abandoned at 60% sample',author:'Tola',team:'CRO',at:t(11)},i3:{id:'i3',kind:'qual',name:'User testing, 6 sessions, Sept',text:'P1: "Is this an actual doctor or a chatbot? It doesn’t say."\nP2 scrolled to the FAQ to find the price before doing anything else.\nP3: "50,000 members means nothing to me, who are they?"\nP4 tapped the hero image twice expecting it to start.\nP5: "Free assessment… and then what? Do I have to pay to see the result?"\nP6 wanted to know what happens if she doesn’t qualify before starting.',author:'Sam',team:'Design',at:t(12)},i4:{id:'i4',kind:'qual',name:'Support themes, last 60 days',text:'Pre-signup questions (top 5): 1. Is a real clinician reviewing me (31%) 2. What does the price include (24%) 3. Will I qualify (18%) 4. What happens after the quiz (14%) 5. Can I cancel (9%)',author:'Maya',team:'Product',at:t(13)},i5:{id:'i5',kind:'opinion',name:'Paid social view',text:'Our best-performing ads lead with "clinician-led" and "no gimmicks". The landing page hero leads with "take control", which is a different promise. I think message match is the biggest gap.',author:'Priya',team:'Marketing',at:t(14)}});
+  await h('insights',{n1:{id:'n1',type:'quant',title:'Only 6% of visitors click the CTA, and most loss happens before it: 35% never scroll past the hero.',body:'GA4: 48,200 landing → 31,300 scrolled → 2,890 CTA clicks.',source:'GA4 funnel',author:'AI',at:t(20)},n2:{id:'n2',type:'quant',title:'The sticky mobile CTA test lifted clicks 6% but start rate only 3.9% (not significant): getting people to the quiz is not the same as getting them to start it.',body:'Test history row 2.',source:'Test history',author:'AI',at:t(21)},n3:{id:'n3',type:'qual',title:'Visitors cannot tell whether a clinician is involved, and it is the top pre-signup support question (31%).',body:'P1 verbatim; support themes #1.',source:'User testing; Support themes',author:'AI',at:t(22)},n4:{id:'n4',type:'qual',title:'People look for the price before committing; showing it on the hero hurt clicks, but hiding it sends them to the FAQ.',body:'P2 behaviour; test history row 3; support #2 (24%).',source:'User testing; Test history',author:'AI',at:t(23)},n5:{id:'n5',type:'qual',title:'"Free assessment" raises the question of what comes next and whether they will qualify.',body:'P5, P6; support themes #3 and #4 (32% combined).',source:'User testing; Support themes',author:'AI',at:t(24)},n6:{id:'n6',type:'opinion',title:'Ads promise "clinician-led, no gimmicks"; the hero says "take control", so the first screen breaks the ad promise.',body:'Marketing view, consistent with insight 3.',source:'Paid social view',author:'Priya',at:t(25)},n7:{id:'n7',type:'qual',title:'"50,000 members" is not a trust signal for this audience; they want to know who those people are.',body:'P3 verbatim.',source:'User testing',author:'Sam',at:t(26)}});
+  await h('ideas',{d1:{id:'d1',title:'Replace the hero line with the ad promise: "Clinician-led weight care. No gimmicks."',body:'Match the message visitors just clicked on.',insightId:'n6',concern:'Visitors do not know a clinician is involved',author:'Priya',team:'Marketing',anon:false,at:t(30)},d2:{id:'d2',title:'Show the three-step "what happens next" with the clinician photo and name above the CTA',body:'Answers "is it a real doctor" and "then what" in one block.',insightId:'n3',concern:'Visitors do not know a clinician is involved',author:'Sam',team:'Design',anon:false,at:t(31)},d3:{id:'d3',title:'Add a "what if I don’t qualify" line under the CTA: no charge, you get a written explanation',body:'',insightId:'n5',concern:'',author:'Maya',team:'Product',anon:false,at:t(32)},d4:{id:'d4',title:'Price as a range with what it includes, placed after the how-it-works, not in the hero',body:'Hero price hurt clicks, hidden price sends them to FAQ. Middle ground.',insightId:'n4',concern:'Price is unclear until late in the flow',author:'Tola',team:'CRO',anon:false,at:t(33)},d5:{id:'d5',title:'Make the hero image tappable so it starts the assessment',body:'Two testers tapped it.',insightId:'n1',concern:'Mobile CTA is below the fold',author:'Dan',team:'Engineering',anon:true,at:t(34)},d6:{id:'d6',title:'Swap "Trusted by 50,000+ members" for two short named reviews from people in the target age band',body:'',insightId:'n7',concern:'Testimonials feel unrepresentative',author:'Sam',team:'Design',anon:false,at:t(35)},d7:{id:'d7',title:'Move the CTA into the first viewport on mobile and shorten the hero copy',body:'35% never scroll.',insightId:'n1',concern:'Mobile CTA is below the fold',author:'Tola',team:'CRO',anon:false,at:t(36)},d8:{id:'d8',title:'Add a live chat prompt "Ask a clinician a question first"',body:'Might answer the top support questions pre-signup.',insightId:'n3',concern:'Visitors do not know a clinician is involved',author:'Maya',team:'Product',anon:true,at:t(37)}});
+  await h('votes',{Tola:{d2:2,d4:2,d7:1},Sam:{d2:2,d6:2,d1:1},Priya:{d1:3,d2:1,d3:1},Dan:{d7:2,d5:1,d2:1,d4:1},Maya:{d3:2,d2:1,d8:1,d4:1}});
+  await h('hyps',{h1:{id:'h1',ideaIds:['d2','d1'],hypothesis:"We believe that replacing the hero with the ad promise and a named-clinician three-step block for first-time mobile visitors from paid social will increase assessment starts because testing and support data show the top blocker is not knowing a clinician is involved. We'll know this is true when assessment start rate moves by at least 10% relative with support contacts per start unchanged.",primaryMetric:'Assessment start rate',guardrail:'Support contacts per start',surface:'landing hero',criteria:{aboveFold:true,noticeable:true,addsRemoves:true,highTraffic:true,evQual:true,evQuant:true,concern:true},ease:2,criteriaWhy:'Hero is first viewport; insights 1, 3, 6; concern 1.',at:t(40)},h2:{id:'h2',ideaIds:['d7','d5'],hypothesis:"We believe that bringing the CTA into the first mobile viewport and making the hero tappable will increase CTA clicks and starts because 35% of visitors never scroll past the hero. We'll know this is true when assessment start rate moves by at least 8% relative with quiz completion unchanged.",primaryMetric:'Assessment start rate',guardrail:'Quiz completion rate',surface:'landing hero',criteria:{aboveFold:true,noticeable:true,addsRemoves:false,highTraffic:true,evQual:true,evQuant:true,concern:true},ease:3,criteriaWhy:'Insight 1; sticky CTA test showed clicks move but starts may not.',at:t(41)},h3:{id:'h3',ideaIds:['d4'],hypothesis:"We believe that showing the price as a range with inclusions after the how-it-works section will increase starts because visitors hunt for price and the hero price test hurt clicks. We'll know this is true when assessment start rate moves by at least 6% relative with refund rate unchanged.",primaryMetric:'Assessment start rate',guardrail:'Refund rate 14d',surface:'pricing block',criteria:{aboveFold:false,noticeable:true,addsRemoves:true,highTraffic:true,evQual:true,evQuant:true,concern:true},ease:3,criteriaWhy:'Insight 4; test history row 3.',at:t(42)},h4:{id:'h4',ideaIds:['d3'],hypothesis:"We believe that stating under the CTA that an unsuccessful assessment costs nothing and comes with a written explanation will increase starts because fear of not qualifying is 18% of pre-signup questions. We'll know this is true when assessment start rate moves by at least 5% relative with quiz completion unchanged.",primaryMetric:'Assessment start rate',guardrail:'Quiz completion rate',surface:'cta block',criteria:{aboveFold:true,noticeable:false,addsRemoves:true,highTraffic:true,evQual:true,evQuant:false,concern:false},ease:3,criteriaWhy:'Insight 5; small copy addition.',at:t(43)},h5:{id:'h5',ideaIds:['d6'],hypothesis:"We believe that replacing the member count with two named reviews from the target age band will increase starts because the current proof is not credible to this audience. We'll know this is true when assessment start rate moves by at least 4% relative with support contacts unchanged.",primaryMetric:'Assessment start rate',guardrail:'Support contacts per start',surface:'social proof',criteria:{aboveFold:false,noticeable:false,addsRemoves:false,highTraffic:true,evQual:true,evQuant:false,concern:true},ease:2,criteriaWhy:'Insight 7 only; one tester.',at:t(44)}})}
+
+/* ---------- Routing ---------- */
+const ART=!!window.__shimPost;const params=new URLSearchParams(location.search);const sid=params.get('s')||(location.pathname.match(/\/s\/([\w-]+)/)||[])[1]||(ART?location.hash.replace('#',''):'')||null;const fkeyParam=params.get('f')||(ART&&sid?(function(){try{return JSON.parse(localStorage.getItem('ide.fkey:'+sid))}catch(e){return null}})():null);const LINK=(id,f)=>ART?'#'+id:'?s='+id+(f?'&f='+f:'');
+let S={meta:null,context:{},inputs:{},insights:{},people:{},ideas:{},votes:{},hyps:{},roadmap:null};let me=null,isFac=false,stage='context',timer=null;
+const K=p=>`s:${sid}:${p}`;
+
+if(!sid)showHome();else boot();
+
+async function showHome(){$('home').classList.remove('hidden');try{const j=await store.op('get','ping');$('storePill').textContent=j.persistent?'Storage: shared':'Storage: local dev only';$('storePill').className='pill '+(j.persistent?'good':'warn')}catch(e){$('storePill').textContent='Storage: unreachable';$('storePill').className='pill bad'}
+  const mine=ls.get('sessions')||[];$('sessList').innerHTML=mine.length?mine.map(s=>`<a href="${LINK(s.id,s.fkey)}" data-go="${esc(s.id)}"><span>${esc(s.name)}</span><span class="small">${esc(s.date)}${s.fkey?' · facilitator':''}</span></a>`).join(''):'<span class="small">None yet.</span>';
+  $('nFac').value=ls.get('name')||'';if(ART)$('sessList').addEventListener('click',e=>{const a=e.target.closest('[data-go]');if(a){e.preventDefault();location.hash=a.dataset.go;location.reload()}});
+  $('nCreate').onclick=async()=>{const name=$('nName').value.trim(),fac=$('nFac').value.trim();if(!name||!fac){flash($('nStatus'),'Name the session and yourself.');return}const id=uid(),fkey=uid()+uid();const meta={id,name,page:$('nPage').value,goal:$('nGoal').value,facilitator:fac,fkey,dots:+$('nDots').value||5,status:'setup',created:new Date().toISOString(),weights:DEFAULT_WEIGHTS,runDays:14};
+    try{await store.set(`session:${id}`,meta);await store.sadd('sessions',id);ls.set('name',fac);ls.set('team','CRO');ls.set('sessions',[{id,name,date:meta.created.slice(0,10),fkey}].concat(mine));ls.set('fkey:'+id,fkey);if(ART){location.hash=id;location.reload()}else location.href=`?s=${id}&f=${fkey}`}catch(e){flash($('nStatus'),'Could not save: '+e.message,4000)}};
+  $('nSample').onclick=async()=>{const fac=$('nFac').value.trim()||'Tola';const id=uid(),fkey=uid()+uid();flash($('nStatus'),'Building sample session…',0);try{await seedSample(id,{id,name:'Assessment page ideation (sample)',facilitator:fac,fkey,created:new Date().toISOString(),runDays:14});await store.sadd('sessions',id);ls.set('name',fac);ls.set('sessions',[{id,name:'Assessment page ideation (sample)',date:new Date().toISOString().slice(0,10),fkey}].concat(mine));ls.set('fkey:'+id,fkey);ls.set('me:'+id,{name:fac,team:'CRO'});if(ART){location.hash=id;location.reload()}else location.href=`?s=${id}&f=${fkey}`}catch(e){flash($('nStatus'),'Could not build sample: '+e.message,5000)}}}
+
+async function boot(){let meta;try{meta=await store.get(`session:${sid}`)}catch(e){}if(!meta){document.body.innerHTML='<div class="join panel"><h2>Session not found</h2><p class="small">The link may be wrong, or the store is not connected.</p><a class="btn" href="./" id="nfHome">Home</a></div>';if(ART)document.getElementById('nfHome').onclick=e=>{e.preventDefault();location.hash='';location.reload()};return}
+  S.meta=meta;isFac=!!fkeyParam&&fkeyParam===meta.fkey;if(isFac){const mine=ls.get('sessions')||[];if(!mine.find(x=>x.id===sid))ls.set('sessions',[{id:sid,name:meta.name,date:meta.created.slice(0,10),fkey:meta.fkey}].concat(mine))}
+  const saved=ls.get('me:'+sid);if(saved){me=saved;start()}else{$('joinView').classList.remove('hidden');$('jTitle').textContent='Join: '+meta.name;$('jSub').textContent=[meta.page,meta.goal].filter(Boolean).join(' · ');$('jName').value=ls.get('name')||(isFac?meta.facilitator:'');$('jTeam').value=ls.get('team')||'CRO';$('jGo').onclick=()=>{const n=$('jName').value.trim();if(!n)return;me={name:n,team:$('jTeam').value};ls.set('me:'+sid,me);ls.set('name',n);ls.set('team',me.team);$('joinView').classList.add('hidden');start()}}}
+
+async function start(){$('app').classList.remove('hidden');await store.hset(K('people'),me.name,{name:me.name,team:me.team,joined:new Date().toISOString()});
+  $('stepper').addEventListener('click',e=>{const b=e.target.closest('button');if(b)go(b.dataset.stage)});
+  $('shareBtn').onclick=()=>{const u=ART?location.origin+location.pathname+'#'+sid:location.origin+location.pathname+'?s='+sid;navigator.clipboard.writeText(u).then(()=>flash($('shareBtn'),'Copied',1200)).catch(()=>{})};
+  document.querySelectorAll('.fac').forEach(el=>{if(!isFac)el.classList.add('hidden')});if(ART)$('homeLink').onclick=e=>{e.preventDefault();location.hash='';location.reload()};
+  go(ls.get('stage:'+sid)||stageFor(S.meta.status));await refresh();timer=setInterval(refresh,5000);document.addEventListener('visibilitychange',()=>{if(document.hidden){clearInterval(timer);timer=null}else if(!timer){refresh();timer=setInterval(refresh,5000)}})}
+function stageFor(st){return{setup:'context',insights:'insights',ideation:'ideas',voting:'ideas',revealed:'ideas',hypotheses:'hyps',prioritised:'prior',planned:'roadmap'}[st]||'context'}
+function go(s){stage=s;document.querySelectorAll('section.stage').forEach(x=>x.classList.toggle('active',x.id==='st-'+s));$('stepper').querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.stage===s?'page':'false'));ls.set('stage:'+sid,s);render()}
+
+let editing=new Set();
+document.addEventListener('focusin',e=>{if(e.target.matches('input,textarea,select'))editing.add(e.target.id||e.target)});document.addEventListener('focusout',e=>{editing.delete(e.target.id||e.target)});
+async function refresh(){try{const [meta,context,inputs,insights,people,ideas,votes,hyps,roadmap]=await Promise.all([store.get(`session:${sid}`),store.get(K('context')),store.hgetall(K('inputs')),store.hgetall(K('insights')),store.hgetall(K('people')),store.hgetall(K('ideas')),store.hgetall(K('votes')),store.hgetall(K('hyps')),store.get(K('roadmap'))]);S={meta:meta||S.meta,context:context||{},inputs,insights,people,ideas,votes,hyps,roadmap};render()}catch(e){}}
+
+/* ---------- Render ---------- */
+const TEAMS=['Marketing','Product','CRO','Design','Engineering','Other'];
+const teamPill=t=>`<span class="pill t-${(t||'other').toLowerCase()}">${esc(t||'Other')}</span>`;
+function render(){const m=S.meta;$('sName').textContent=m.name;$('sSub').textContent=[m.page,m.goal?'Goal: '+m.goal:''].filter(Boolean).join(' · ');$('meBadge').innerHTML=`${esc(me.name)} · ${esc(me.team)}${isFac?' · facilitator':''}`;$('stagePill').textContent='Stage: '+m.status;
+  $('people').innerHTML=Object.values(S.people).sort((a,b)=>a.joined.localeCompare(b.joined)).map(p=>`<span class="pill t-${p.team.toLowerCase()}">${esc(p.name)}</span>`).join('')||'<span class="small">Nobody yet</span>';
+  if(isFac){const next={setup:['insights','Open insights'],insights:['ideation','Open ideation'],ideation:['voting','Open voting'],voting:['revealed','Reveal votes'],revealed:['hypotheses','Move to hypotheses'],hypotheses:['prioritised','Move to prioritisation'],prioritised:['planned','Move to roadmap']}[m.status];$('facControls').innerHTML=(next?`<button class="btn small primary" id="advance">${next[1]}</button>`:'')+`<button class="btn small" id="back">Back a stage</button>`;if(next)$('advance').onclick=()=>setStatus(next[0]);$('back').onclick=()=>{const order=['setup','insights','ideation','voting','revealed','hypotheses','prioritised','planned'];const i=order.indexOf(m.status);if(i>0)setStatus(order[i-1])}}
+  renderContext();renderInsights();renderIdeas();renderHyps();renderPrior();renderRoadmap()}
+async function setStatus(st){S.meta.status=st;await store.set(`session:${sid}`,S.meta);go(stageFor(st));refresh()}
+function setIf(id,v){const el=$(id);if(!editing.has(id)&&el.value!==(v||''))el.value=v||''}
+
+/* ---------- 1 Context ---------- */
+function renderContext(){const c=S.context;setIf('cObjective',c.objective);setIf('cConstraints',c.constraints);setIf('cConcerns',c.concerns);setIf('cUrl',c.url);setIf('cHtml',c.html);['cObjective','cConstraints','cConcerns','cUrl','cHtml'].forEach(id=>$(id).readOnly=!isFac);
+  $('cImgs').innerHTML=(c.images||[]).map((im,i)=>`<figure><img src="${esc(im.url)}" alt="${esc(im.name)}"><figcaption>${esc(im.kind==='ad'?'Ad':'Page')} · ${esc(im.name)}</figcaption>${isFac?`<button class="btn small danger" data-delimg="${i}">Remove</button>`:''}</figure>`).join('')||'<span class="small">No images yet.</span>'}
+$('cSeed').onclick=async()=>{if($('cSeed').textContent!=='Replace everything in this session?'){$('cSeed').textContent='Replace everything in this session?';setTimeout(()=>$('cSeed').textContent='Fill this session with sample data',4000);return}flash($('cStatus'),'Filling…',0);try{await seedSample(sid,{...S.meta});flash($('cStatus'),'Sample data loaded');refresh()}catch(e){flash($('cStatus'),'Failed: '+e.message,5000)}};
+$('cSave').onclick=async()=>{const c={...S.context,objective:$('cObjective').value,constraints:$('cConstraints').value,concerns:$('cConcerns').value,url:$('cUrl').value,html:$('cHtml').value};await store.set(K('context'),c);S.context=c;flash($('cStatus'),'Saved');render()};
+$('cExtract').onclick=()=>{const d=new DOMParser().parseFromString($('cHtml').value,'text/html');d.querySelectorAll('script,style,noscript,svg').forEach(x=>x.remove());d.querySelectorAll('p,div,h1,h2,h3,h4,h5,h6,li,tr,br,section,article,header,footer,button,a').forEach(x=>x.append('\n'));const t=d.body?d.body.textContent:'';$('cHtml').value=t.replace(/\n{3,}/g,'\n\n').trim()};
+$('cRender').onclick=()=>{const f=$('cFrame');f.classList.toggle('hidden');if(!f.classList.contains('hidden'))f.srcdoc=$('cHtml').value};
+async function uploadFiles(files,kind){const st=$('cImgStatus');for(const f of files){flash(st,'Uploading '+f.name+'…',0);const dataUrl=await shrink(f);try{const j=await post('/api/upload',{name:f.name,dataUrl});const c=S.context;c.images=(c.images||[]).concat([{url:j.url,name:f.name,kind}]);await store.set(K('context'),c)}catch(e){flash(st,'Upload failed: '+e.message,4000);return}}flash(st,'Uploaded');refresh()}
+function shrink(file){return new Promise(res=>{const img=new Image();const r=new FileReader();r.onload=()=>{img.onload=()=>{const max=1400;const sc=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',0.82))};img.src=r.result};r.readAsDataURL(file)})}
+$('cImgAd').onchange=e=>uploadFiles([...e.target.files],'ad');$('cImgPage').onchange=e=>uploadFiles([...e.target.files],'page');
+$('cImgs').addEventListener('click',async e=>{const b=e.target.closest('[data-delimg]');if(!b)return;const c=S.context;c.images.splice(+b.dataset.delimg,1);await store.set(K('context'),c);refresh()});
+
+/* ---------- 2 Evidence and insights ---------- */
+$('iFile').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{$('iText').value=t.slice(0,60000);if(!$('iName').value)$('iName').value=f.name;if(/\.(csv|tsv)$/i.test(f.name))$('iKind').value='quant'})};
+$('iAdd').onclick=async()=>{const text=$('iText').value.trim();if(!text){flash($('iStatus'),'Paste something first.');return}const id=uid();await store.hset(K('inputs'),id,{id,kind:$('iKind').value,name:$('iName').value||$('iKind').value,text,author:me.name,team:me.team,at:new Date().toISOString()});$('iText').value='';$('iName').value='';flash($('iStatus'),'Added');refresh()};
+function summariseCsv(text){const rows=text.split(/\r?\n/).filter(l=>l.trim()).map(l=>l.split(/[\t,;]/).map(x=>x.trim()));if(rows.length<2)return '';const head=rows[0];const body=rows.slice(1,9);return `<div class="tablewrap"><table><thead><tr>${head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${body.map(r=>`<tr>${r.map(c=>`<td class="${/^[\d.,%£$]+$/.test(c)?'num':''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>${rows.length>9?`<span class="small">${rows.length-1} rows</span>`:''}`}
+function renderInsights(){const ins=Object.values(S.inputs).sort((a,b)=>a.at.localeCompare(b.at));$('inputs').innerHTML=ins.map(i=>`<div class="card q-${i.kind}"><div class="meta"><span class="pill">${esc(i.kind)}</span>${teamPill(i.team)}<span class="small">${esc(i.author)}</span></div><div class="title">${esc(i.name)}</div>${i.kind==='quant'&&/[,\t;]/.test(i.text)?summariseCsv(i.text):`<div class="verb" style="white-space:pre-wrap;max-height:160px;overflow:auto">${esc(i.text.slice(0,1200))}${i.text.length>1200?'…':''}</div>`}${(i.author===me.name||isFac)?`<div class="foot"><span></span><button class="btn small danger" data-delin="${i.id}">Remove</button></div>`:''}</div>`).join('')||'<span class="small">No evidence yet.</span>';
+  const list=Object.values(S.insights).sort((a,b)=>(a.at||'').localeCompare(b.at||''));$('insights').innerHTML=list.map(n=>`<div class="card q-${n.type}" data-ins="${n.id}"><div class="meta"><span class="pill">${esc(n.type)}</span><span class="small">${esc(n.source||'')}</span></div><div class="title" contenteditable="${isFac||n.author===me.name}" data-f="title">${esc(n.title)}</div>${n.body?`<div class="body" contenteditable="${isFac||n.author===me.name}" data-f="body">${esc(n.body)}</div>`:''}<div class="foot"><span class="small">${esc(n.author||'AI')}</span>${(isFac||n.author===me.name)?`<button class="btn small danger" data-delins="${n.id}">Remove</button>`:''}</div></div>`).join('')||'<span class="small">No insights yet. Add evidence, then generate or add by hand.</span>';
+  const sel=$('idInsight');const cur=sel.value;sel.innerHTML='<option value="">(none)</option>'+list.map(n=>`<option value="${n.id}">${esc(n.title.slice(0,80))}</option>`).join('');sel.value=cur;
+  const cs=$('idConcern');const cc=cs.value;cs.innerHTML='<option value="">(none)</option>'+(S.context.concerns||'').split('\n').filter(x=>x.trim()).map(x=>`<option>${esc(x.trim())}</option>`).join('');cs.value=cc}
+$('inputs').addEventListener('click',async e=>{const b=e.target.closest('[data-delin]');if(b){await store.hdel(K('inputs'),b.dataset.delin);refresh()}});
+$('insights').addEventListener('click',async e=>{const b=e.target.closest('[data-delins]');if(b){await store.hdel(K('insights'),b.dataset.delins);refresh()}});
+$('insights').addEventListener('focusout',async e=>{const el=e.target.closest('[contenteditable=true]');if(!el)return;const id=el.closest('[data-ins]').dataset.ins;const n=S.insights[id];if(!n)return;const v=el.textContent.trim();if(n[el.dataset.f]===v)return;n[el.dataset.f]=v;await store.hset(K('insights'),id,n)});
+$('nsAdd').onclick=async()=>{const t=$('nsTitle').value.trim();if(!t)return;const id=uid();await store.hset(K('insights'),id,{id,type:$('nsType').value,title:t,source:$('nsSource').value,author:me.name,at:new Date().toISOString()});$('nsTitle').value='';refresh()};
+function evidenceText(){return Object.values(S.inputs).map(i=>`[${i.kind} | ${i.name} | by ${i.author}, ${i.team}]\n${i.text.slice(0,8000)}`).join('\n\n')}
+function contextText(){const c=S.context;return `Session: ${S.meta.name}. Page: ${S.meta.page}. Goal metric: ${S.meta.goal}.\nObjective: ${c.objective||''}\nConstraints: ${c.constraints||''}\nConcerns: ${c.concerns||''}\nPage copy: ${(c.html||'').slice(0,6000)}`}
+$('genInsights').onclick=async()=>{const st=$('genStatus');if(!Object.keys(S.inputs).length){flash(st,'Add evidence first.');return}flash(st,'Reading evidence…',0);
+  try{const r=await ai(`You are a CRO lead preparing an ideation session. From the context and evidence, write 6-12 insights. Each is one specific sentence a stakeholder could challenge, with a one-line body giving the number or quote behind it, typed quant / qual / opinion by the evidence it came from (opinions stay labelled opinion). Name the source label. Do not invent numbers; if evidence is thin, say so in the body. Return ONLY JSON {"insights":[{"type":"quant|qual|opinion","title":"","body":"","source":""}]}\n\n${contextText()}\n\nEvidence:\n${evidenceText()}`);
+    for(const n of (r.insights||[])){const id=uid();await store.hset(K('insights'),id,{id,type:n.type||'quant',title:n.title,body:n.body,source:n.source,author:'AI',at:new Date().toISOString()})}flash(st,`Added ${(r.insights||[]).length} insights`);refresh()}catch(e){flash(st,'Failed: '+e.message,5000)}};
+$('genImagery').onclick=async()=>{const st=$('genStatus');const ims=(S.context.images||[]);if(!ims.length){flash(st,'Add ad images or screenshots in Context first.');return}flash(st,'Fetching images…',0);
+  try{const data=[];for(const im of ims.slice(0,6)){const b=await fetch(im.url).then(r=>r.blob());data.push(await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(b)}))}flash(st,'Analysing…',0);
+    const r=await ai(`Images in order: ${ims.slice(0,6).map((im,i)=>`#${i+1} ${im.kind} "${im.name}"`).join(', ')}. You are a CRO specialist. For the ads: the promise, the hook, the audience implied, the offer. For the page screenshots: the first thing seen, the primary CTA, trust elements, friction. Then message match: where the page keeps or breaks the ad's promise (headline, offer, proof, price, visual). Write 4-8 insights of type "image", one sentence each with a short body naming the image number. Return ONLY JSON {"insights":[{"title":"","body":"","source":"image #n"}]}\n\n${contextText()}`,{images:data});
+    for(const n of (r.insights||[])){const id=uid();await store.hset(K('insights'),id,{id,type:'image',title:n.title,body:n.body,source:n.source,author:'AI',at:new Date().toISOString()})}flash(st,`Added ${(r.insights||[]).length} imagery insights`);refresh()}catch(e){flash(st,'Failed: '+e.message,5000)}};
+
+/* ---------- 3 Ideas and votes ---------- */
+$('idAdd').onclick=async()=>{const t=$('idTitle').value.trim();if(!t)return;const id=uid();await store.hset(K('ideas'),id,{id,title:t,body:$('idBody').value,insightId:$('idInsight').value,concern:$('idConcern').value,author:me.name,team:me.team,anon:$('idAnon').checked,at:new Date().toISOString()});$('idTitle').value='';$('idBody').value='';$('idAnon').checked=false;refresh()};
+function myVotes(){return S.votes[me.name]||{}}
+function renderIdeas(){const st=S.meta.status;const voting=st==='voting',revealed=['revealed','hypotheses','prioritised','planned'].includes(st);const mine=myVotes();const used=Object.values(mine).reduce((a,b)=>a+b,0);const dots=S.meta.dots||5;
+  $('voteHelp').textContent=st==='ideation'?'Ideation is open. Add ideas; voting starts when the facilitator opens it.':voting?`Voting is open. You have ${dots} dots; totals stay hidden until the facilitator reveals.`:revealed?'Votes revealed.':'Ideas open when the facilitator opens ideation.';
+  $('dotsLeft').textContent=voting?`${dots-used} dots left`:'';$('dotsLeft').className='pill '+(voting&&dots-used>0?'accent':'');
+  const totals={};if(revealed)Object.values(S.votes).forEach(v=>Object.entries(v).forEach(([id,n])=>totals[id]=(totals[id]||0)+n));const maxT=Math.max(1,...Object.values(totals));
+  const list=Object.values(S.ideas).sort((a,b)=>revealed?(totals[b.id]||0)-(totals[a.id]||0):a.at.localeCompare(b.at));
+  $('ideas').innerHTML=list.map(i=>{const ins=S.insights[i.insightId];const author=i.anon?(i.author===me.name?'you (anonymous)':'anonymous'):i.author;return `<div class="card"><div class="title">${esc(i.title)}</div>${i.body?`<div class="body">${esc(i.body)}</div>`:''}${ins?`<div class="verb">${esc(ins.title)}</div>`:''}<div class="meta">${i.concern?`<span class="pill warn">${esc(i.concern)}</span>`:''}${i.anon?'<span class="pill">anon</span>':teamPill(i.team)}<span class="small">${esc(author)}</span>${i.anon&&i.author===me.name?`<button class="btn small" data-claim="${i.id}">Claim authorship</button>`:''}</div>${revealed?`<div class="bar"><i style="width:${(totals[i.id]||0)/maxT*100}%"></i></div><div class="meta"><span class="pill accent">${totals[i.id]||0} votes</span><span class="small">${voterList(i.id)}</span></div>`:''}<div class="foot">${voting?`<div class="dots"><button class="btn" data-vote="${i.id}" data-d="-1" ${!(mine[i.id]>0)?'disabled':''}>−</button><span class="cnt">${mine[i.id]||0}</span><button class="btn" data-vote="${i.id}" data-d="1" ${used>=dots?'disabled':''}>+</button></div>`:'<span></span>'}<div class="actions">${ideaInHyp(i.id)?'<span class="pill good">In hypotheses</span>':`<button class="btn small" data-push="${i.id}">Push to hypotheses</button>`}${(i.author===me.name||isFac)&&!revealed?`<button class="btn small danger" data-delidea="${i.id}">Remove</button>`:''}</div></div></div>`}).join('')||'<span class="small">No ideas yet.</span>'}
+function ideaInHyp(id){return Object.values(S.hyps).some(h=>(h.ideaIds||[]).includes(id))}
+async function pushIdea(id,btn){const i=S.ideas[id];if(!i||ideaInHyp(id))return;btn.disabled=true;btn.textContent='Neatening…';const goal=S.meta.goal||'the goal metric';let h={ideaIds:[id],hypothesis:`We believe that ${i.title.replace(/\.$/,'')} for visitors to ${S.meta.page||'this page'} will increase ${goal} because ${(S.insights[i.insightId]||{}).title||i.body||'[evidence to add]'}. We'll know this is true when ${goal} moves by at least [MDE] with [guardrail] unchanged.`,primaryMetric:goal,guardrail:'',surface:''};
+  try{const r=await ai(`Turn this one rough idea into a test hypothesis in exactly this form: "We believe that [change] for [segment] will [outcome] because [evidence]. We'll know this is true when [primary metric] moves by at least [MDE] with [guardrail metric] unchanged." Primary metric defaults to the session goal metric. Surface = the page element or step touched, short. Return ONLY JSON {"hypothesis":"","primaryMetric":"","guardrail":"","surface":""}\n\n${contextText()}\n\nIdea: ${i.title}\nWhy: ${i.body||'-'}\nConcern: ${i.concern||'-'}\nInsight: ${(S.insights[i.insightId]||{}).title||'-'}`);if(r&&r.hypothesis)h={...h,...r,ideaIds:[id]}}catch(e){}
+  const hid=uid();await store.hset(K('hyps'),hid,{id:hid,...h,criteria:{},ease:2,at:new Date().toISOString()});await refresh();go('hyps')}
+function voterList(id){const names=Object.entries(S.votes).filter(([p,v])=>v[id]>0).map(([p,v])=>`${p} ×${v[id]}`);return names.join(', ')}
+$('ideas').addEventListener('click',async e=>{const v=e.target.closest('[data-vote]');if(v){const mine={...myVotes()};const id=v.dataset.vote;mine[id]=Math.max(0,(mine[id]||0)+(+v.dataset.d));if(!mine[id])delete mine[id];const used=Object.values(mine).reduce((a,b)=>a+b,0);if(used>(S.meta.dots||5))return;S.votes[me.name]=mine;renderIdeas();await store.hset(K('votes'),me.name,mine);return}
+  const p=e.target.closest('[data-push]');if(p){pushIdea(p.dataset.push,p);return}
+  const c=e.target.closest('[data-claim]');if(c){const i=S.ideas[c.dataset.claim];i.anon=false;await store.hset(K('ideas'),i.id,i);refresh();return}
+  const d=e.target.closest('[data-delidea]');if(d){await store.hdel(K('ideas'),d.dataset.delidea);refresh()}});
+
+/* ---------- 4 Hypotheses ---------- */
+const CRIT=[{k:'aboveFold',t:'Above the fold',d:'Change is visible without scrolling on the main device'},{k:'noticeable',t:'Noticeable in 5s',d:'A first-time visitor would notice the change'},{k:'addsRemoves',t:'Adds or removes an element',d:'Structural change, not a tweak'},{k:'highTraffic',t:'High-traffic surface',d:'Page or step in the top traffic band'},{k:'evQual',t:'Qual evidence',d:'Backed by research, verbatims or session recordings'},{k:'evQuant',t:'Quant evidence',d:'Backed by analytics or test history'},{k:'concern',t:'Addresses a stated concern',d:'Maps to a business concern in Context'}];
+const DEFAULT_WEIGHTS={aboveFold:1,noticeable:2,addsRemoves:1,highTraffic:1,evQual:1,evQuant:1,concern:1,ease:2,votes:3};
+function renderHyps(){const totals={};Object.values(S.votes).forEach(v=>Object.entries(v).forEach(([id,n])=>totals[id]=(totals[id]||0)+n));const list=Object.values(S.hyps).sort((a,b)=>(a.at||'').localeCompare(b.at||''));
+  $('hyps').innerHTML=list.map(h=>{const ideas=(h.ideaIds||[]).map(id=>S.ideas[id]).filter(Boolean);const votes=ideas.reduce((a,i)=>a+(totals[i.id]||0),0);const authors=[...new Set(ideas.map(i=>i.anon?'anonymous':i.author))].join(', ');return `<div class="card" data-h="${h.id}"><div class="meta"><span class="pill accent">${votes} votes</span><span class="pill">${esc(h.surface||'surface?')}</span></div><div class="body" contenteditable="true" data-f="hypothesis">${esc(h.hypothesis)}</div><div class="row"><div class="field"><label>Primary metric</label><input data-f="primaryMetric" value="${esc(h.primaryMetric||'')}"></div><div class="field"><label>Guardrail</label><input data-f="guardrail" value="${esc(h.guardrail||'')}"></div><div class="field"><label>Surface</label><input data-f="surface" value="${esc(h.surface||'')}"></div></div><div class="small">From: ${ideas.map(i=>esc(i.title)).join(' · ')||'—'}</div><div class="foot"><span class="small">Authors: ${esc(authors||'—')}</span>${isFac?`<button class="btn small danger" data-delh="${h.id}">Remove</button>`:''}</div></div>`}).join('')||'<span class="small">No hypotheses yet. The facilitator neatens the ideas after voting.</span>'}
+$('hyps').addEventListener('focusout',async e=>{const el=e.target.closest('[data-f]');if(!el)return;const id=el.closest('[data-h]').dataset.h;const h=S.hyps[id];if(!h)return;const v=el.tagName==='INPUT'?el.value:el.textContent.trim();if(h[el.dataset.f]===v)return;h[el.dataset.f]=v;await store.hset(K('hyps'),id,h)});
+$('hyps').addEventListener('click',async e=>{const b=e.target.closest('[data-delh]');if(b){await store.hdel(K('hyps'),b.dataset.delh);refresh()}});
+$('genHyps').onclick=async()=>{const st=$('hStatus');const ideas=Object.values(S.ideas).filter(i=>!ideaInHyp(i.id));if(!ideas.length){flash(st,'Every idea is already in a hypothesis.');return}flash(st,'Neatening…',0);
+  try{const r=await ai(`Turn these rough ideas into test hypotheses. Merge duplicates and near-duplicates (list every merged idea id). Keep the author's intent. Each hypothesis in exactly this form: "We believe that [change] for [segment] will [outcome] because [evidence]. We'll know this is true when [primary metric] moves by at least [MDE] with [guardrail metric] unchanged." Primary metric should default to the session goal metric unless the idea targets a different step. Surface = the page or step touched, short and consistent across hypotheses so the roadmap can detect clashes. Do not add ideas that are not in the list. Return ONLY JSON {"hypotheses":[{"ideaIds":[""],"hypothesis":"","primaryMetric":"","guardrail":"","surface":""}]}\n\n${contextText()}\n\nInsights:\n${Object.values(S.insights).map(n=>`- (${n.type}) ${n.title}`).join('\n')}\n\nIdeas:\n${ideas.map(i=>`id=${i.id} | ${i.title} | ${i.body||''} | concern: ${i.concern||'-'} | insight: ${(S.insights[i.insightId]||{}).title||'-'}`).join('\n')}`);
+    for(const h of (r.hypotheses||[])){const id=uid();await store.hset(K('hyps'),id,{id,ideaIds:h.ideaIds||[],hypothesis:h.hypothesis,primaryMetric:h.primaryMetric,guardrail:h.guardrail,surface:h.surface,criteria:{},ease:2,at:new Date().toISOString()})}flash(st,`Created ${(r.hypotheses||[]).length} hypotheses`);refresh()}catch(e){flash(st,'Failed: '+e.message,5000)}};
+
+/* ---------- 5 Prioritise ---------- */
+function weights(){return{...DEFAULT_WEIGHTS,...(S.meta.weights||{})}}
+function scoreOf(h,totals,maxVotes){const w=weights();let s=0;CRIT.forEach(c=>{s+=(h.criteria&&h.criteria[c.k]?1:0)*w[c.k]});s+=((h.ease||2)/3)*w.ease;const v=(h.ideaIds||[]).reduce((a,id)=>a+(totals[id]||0),0);s+=(maxVotes?v/maxVotes:0)*w.votes;return{score:s,votes:v}}
+function renderPrior(){const w=weights();$('wTable').innerHTML=`<thead><tr><th>Criterion</th><th>Meaning</th><th>Weight</th></tr></thead><tbody>${CRIT.map(c=>`<tr><td>${c.t}</td><td class="small">${c.d}</td><td><input type="number" step="0.5" data-w="${c.k}" value="${w[c.k]}" ${isFac?'':'disabled'}></td></tr>`).join('')}<tr><td>Ease</td><td class="small">3 = a copy or styling change, 2 = new component, 1 = backend or multi-team build. Scored ÷ 3.</td><td><input type="number" step="0.5" data-w="ease" value="${w.ease}" ${isFac?'':'disabled'}></td></tr><tr><td>Votes</td><td class="small">Share of the most-voted hypothesis, so the room's view counts without dominating.</td><td><input type="number" step="0.5" data-w="votes" value="${w.votes}" ${isFac?'':'disabled'}></td></tr></tbody>`;
+  const totals={};Object.values(S.votes).forEach(v=>Object.entries(v).forEach(([id,n])=>totals[id]=(totals[id]||0)+n));const hs=Object.values(S.hyps);const maxVotes=Math.max(0,...hs.map(h=>(h.ideaIds||[]).reduce((a,id)=>a+(totals[id]||0),0)));
+  const rows=hs.map(h=>({h,...scoreOf(h,totals,maxVotes)})).sort((a,b)=>b.score-a.score);const maxS=Object.values(w).reduce((a,b)=>a+b,0);
+  $('pTable').innerHTML=`<thead><tr><th>#</th><th>Hypothesis</th><th>Surface</th>${CRIT.map(c=>`<th title="${c.d}">${c.t}</th>`).join('')}<th>Ease</th><th>Votes</th><th>Score</th></tr></thead><tbody>${rows.map((r,i)=>`<tr data-h="${r.h.id}"><td class="num">${i+1}</td><td style="min-width:260px">${esc(r.h.hypothesis)}${r.h.criteriaWhy?`<details><summary>why</summary><div class="small">${esc(r.h.criteriaWhy)}</div></details>`:''}</td><td>${esc(r.h.surface||'')}</td>${CRIT.map(c=>`<td><input type="checkbox" data-c="${c.k}" ${r.h.criteria&&r.h.criteria[c.k]?'checked':''} ${isFac?'':'disabled'}></td>`).join('')}<td><select data-ease ${isFac?'':'disabled'}>${[1,2,3].map(x=>`<option ${r.h.ease==x?'selected':''}>${x}</option>`).join('')}</select></td><td class="num">${r.votes}</td><td class="num"><strong>${r.score.toFixed(1)}</strong><span class="small"> / ${maxS}</span></td></tr>`).join('')}</tbody>`}
+$('wTable').addEventListener('input',e=>{const k=e.target.dataset.w;if(!k)return;S.meta.weights={...weights(),[k]:+e.target.value};renderPrior()});
+$('saveWeights').onclick=async()=>{await store.set(`session:${sid}`,S.meta);flash($('pStatus'),'Weights saved')};
+$('pTable').addEventListener('change',async e=>{const tr=e.target.closest('tr[data-h]');if(!tr)return;const h=S.hyps[tr.dataset.h];if(!h)return;if(e.target.dataset.c){h.criteria=h.criteria||{};h.criteria[e.target.dataset.c]=e.target.checked}else if(e.target.hasAttribute('data-ease'))h.ease=+e.target.value;await store.hset(K('hyps'),h.id,h);renderPrior()});
+$('aiCriteria').onclick=async()=>{const st=$('pStatus');const hs=Object.values(S.hyps);if(!hs.length)return;flash(st,'Scoring…',0);
+  try{const r=await ai(`For each hypothesis, set the PXL-style criteria as true/false from the context, page copy and insights, and ease 1-3 (3 = copy/styling, 2 = new component, 1 = backend or multi-team). Be conservative: a criterion is true only if the evidence supports it. Give a one-line "why" per hypothesis naming which evidence you used. Return ONLY JSON {"items":[{"id":"","criteria":{"aboveFold":false,"noticeable":false,"addsRemoves":false,"highTraffic":false,"evQual":false,"evQuant":false,"concern":false},"ease":2,"why":""}]}\n\n${contextText()}\n\nInsights:\n${Object.values(S.insights).map(n=>`- (${n.type}) ${n.title}: ${n.body||''}`).join('\n')}\n\nHypotheses:\n${hs.map(h=>`id=${h.id} | ${h.hypothesis} | surface: ${h.surface}`).join('\n')}`);
+    for(const it of (r.items||[])){const h=S.hyps[it.id];if(!h)continue;h.criteria=it.criteria||{};h.ease=it.ease||2;h.criteriaWhy=it.why||'';await store.hset(K('hyps'),h.id,h)}flash(st,'Suggested. Review each row before trusting it.');refresh()}catch(e){flash(st,'Failed: '+e.message,5000)}};
+
+/* ---------- 6 Roadmap ---------- */
+(function(){const d=new Date();d.setMonth(d.getMonth()+1);$('rStart').value=d.toISOString().slice(0,7)})();
+function buildRoadmap(){const totals={};Object.values(S.votes).forEach(v=>Object.entries(v).forEach(([id,n])=>totals[id]=(totals[id]||0)+n));const hs=Object.values(S.hyps);const maxVotes=Math.max(0,...hs.map(h=>(h.ideaIds||[]).reduce((a,id)=>a+(totals[id]||0),0)));const ranked=hs.map(h=>({h,...scoreOf(h,totals,maxVotes)})).sort((a,b)=>b.score-a.score);
+  const cap=Math.max(1,+$('rCap').value||4);const [y,m]=$('rStart').value.split('-').map(Number);const months=[];const pending=ranked.slice();let mi=0;
+  while(pending.length&&mi<24){const label=new Date(y,m-1+mi,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});const slot={label,tests:[],surfaces:new Set()};for(let i=0;i<pending.length&&slot.tests.length<cap;){const r=pending[i];const s=(r.h.surface||'').toLowerCase().trim();if(s&&slot.surfaces.has(s)){i++;continue}slot.tests.push(r);slot.surfaces.add(s);pending.splice(i,1)}months.push(slot);mi++}
+  return{months,ranked,deferred:pending}}
+function renderRoadmap(){if(!S.roadmap){$('months').innerHTML='<span class="small">Not built yet.</span>';$('rStats').innerHTML='';return}const rm=S.roadmap;$('rStats').innerHTML=`<div class="stat"><span class="k">Tests planned</span><span class="v">${rm.months.reduce((a,m)=>a+m.tests.length,0)}</span></div><div class="stat"><span class="k">Months</span><span class="v">${rm.months.length}</span></div><div class="stat"><span class="k">Deferred</span><span class="v">${rm.deferred.length}</span></div><div class="stat"><span class="k">Built</span><span class="v" style="font-size:13px">${esc((rm.at||'').slice(0,16).replace('T',' '))}</span></div>`;
+  $('months').innerHTML=rm.months.map(mo=>`<div class="month"><h3>${esc(mo.label)}</h3>${mo.tests.map(t=>`<div class="mini"><b>${esc(t.surface||'')} · score ${(+t.score).toFixed(1)} · ${t.votes} votes</b>${esc(t.hypothesis)}</div>`).join('')}</div>`).join('')}
+$('rBuild').onclick=async()=>{const b=buildRoadmap();const rm={at:new Date().toISOString(),cap:+$('rCap').value,months:b.months.map(m=>({label:m.label,tests:m.tests.map(t=>({id:t.h.id,hypothesis:t.h.hypothesis,surface:t.h.surface,primaryMetric:t.h.primaryMetric,score:t.score,votes:t.votes}))})),deferred:b.deferred.map(t=>t.h.id)};await store.set(K('roadmap'),rm);S.roadmap=rm;renderRoadmap()};
+function roadmapMd(){const rm=S.roadmap;if(!rm)return '';return `# Roadmap: ${S.meta.name}\n\n${rm.months.map(m=>`## ${m.label}\n${m.tests.map((t,i)=>`${i+1}. **${t.surface}** — ${t.hypothesis} _(metric: ${t.primaryMetric}; score ${(+t.score).toFixed(1)}, ${t.votes} votes)_`).join('\n')}`).join('\n\n')}`}
+$('rCopy').onclick=()=>navigator.clipboard.writeText(roadmapMd()).then(()=>flash($('rCopy'),'Copied',1200)).catch(()=>{});
+$('rCsv').onclick=()=>{const rm=S.roadmap;if(!rm)return;const rows=[['Month','Order','Surface','Hypothesis','Primary metric','Score','Votes']];rm.months.forEach(m=>m.tests.forEach((t,i)=>rows.push([m.label,i+1,t.surface,t.hypothesis,t.primaryMetric,(+t.score).toFixed(1),t.votes])));navigator.clipboard.writeText(rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n')).then(()=>flash($('rCsv'),'Copied',1200)).catch(()=>{})};
+})();
+</script>
+</body>
+</html>

@@ -1,4 +1,5 @@
-// POST /api/ai  { input: string | [{role, content}], json: boolean, tier: "quick"|"default"|"complex", long: boolean }
+// POST /api/ai  { input: string | [{role, content}], json: boolean, tier: "quick"|"default"|"complex", long: boolean, images: [dataURL] }
+// images (used by the suite pages) are attached ahead of a string input.
 import Anthropic from "@anthropic-ai/sdk";
 
 const MODELS = { quick: "claude-haiku-5-5", default: "claude-sonnet-5-5", complex: "claude-sonnet-5-5" };
@@ -23,9 +24,17 @@ function parseJSON(text) {
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set" });
-  const { input, json = false, tier = "default", long = false } = req.body || {};
+  const { input, json = false, tier = "default", long = false, images = [] } = req.body || {};
   if (!input) return res.status(400).json({ error: "input is required" });
-  const messages = typeof input === "string" ? [{ role: "user", content: input }] : input;
+  const pics = (Array.isArray(images) ? images : [])
+    .slice(0, 8)
+    .map((d) => /^data:(image\/[\w.+-]+);base64,(.+)$/.exec(d || ""))
+    .filter(Boolean)
+    .map((m) => ({ type: "image", source: { type: "base64", media_type: m[1], data: m[2] } }));
+  const messages =
+    typeof input === "string"
+      ? [{ role: "user", content: pics.length ? [...pics, { type: "text", text: input }] : input }]
+      : input;
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
   const ask = async (msgs) => {
     // Streamed so long answers (a full page rewrite) are not refused by the SDK's non-streaming time guard.

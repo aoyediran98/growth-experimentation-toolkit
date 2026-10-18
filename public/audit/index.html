@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Laws of UX Audit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: input on the left, scorecard and findings on the right; every law is a row with a verdict, evidence and a fix. */
+:root{--bg:#f6f5f2;--panel:#fff;--fg:#1c1f22;--muted:#5f6670;--line:#dcdad3;--soft:#eeece6;--accent:#0b6e70;--accent-fg:#fff;--accent-soft:#dff0ef;--good:#1f7a3a;--warn:#b46a00;--bad:#b3261e;--good-soft:#e2f2e6;--warn-soft:#fbeedb;--bad-soft:#f9e0de;--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;padding-block:0 40px;padding-inline:16px;max-width:1240px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}h1{font-size:22px;font-weight:600}h2{font-size:17px;font-weight:600}
+h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p{margin:0}
+header{padding-block:18px 12px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline}
+header .sub{color:var(--muted);font-size:14px;max-width:74ch}
+.layout{display:grid;grid-template-columns:360px minmax(0,1fr);gap:20px;padding-top:18px}
+@media (max-width:920px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.field{display:flex;flex-direction:column;gap:3px}.field label{font-size:12px;font-weight:500;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+textarea{min-height:200px;resize:vertical;font-size:13px;font-family:var(--mono)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:7px 12px}
+.btn:hover{background:var(--soft)}.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}.btn.small{padding:4px 9px;font-size:13px;font-weight:500}.btn:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.status{font-size:13px;color:var(--muted)}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.accent{background:var(--accent-soft);color:var(--accent)}
+.right{display:flex;flex-direction:column;gap:14px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.stat .v{font-family:var(--mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}.stat .d{font-size:12px;color:var(--muted)}
+.score{display:flex;align-items:center;gap:14px}
+.ring{width:84px;height:84px;flex:0 0 84px}
+.ring text{font-family:var(--mono);font-size:20px;font-weight:500;fill:var(--fg)}
+.law{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:var(--panel);border-left-width:4px}
+.law.good{border-left-color:var(--good)}.law.warn{border-left-color:var(--warn)}.law.bad{border-left-color:var(--bad)}.law.na{border-left-color:var(--line);opacity:.8}
+.law .head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.law .name{font-weight:600}.law .def{font-size:13px;color:var(--muted)}
+.law .ev{font-size:13.5px}.law .ev code{font-family:var(--mono);font-size:12px;background:var(--soft);padding:0 4px;border-radius:3px}
+.law .fix{font-size:13.5px;background:var(--soft);border-radius:6px;padding:7px 10px}.law .fix b{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-bottom:2px}
+.laws{display:flex;flex-direction:column;gap:8px}
+.group{display:flex;flex-direction:column;gap:8px}
+.group h3{padding-top:6px}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.fact{font-size:12px;background:var(--soft);border-radius:4px;padding:4px 8px;display:flex;justify-content:space-between;gap:6px}.fact b{font-family:var(--mono);font-weight:500}
+.top{display:flex;flex-direction:column;gap:6px}
+.top .t{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px;align-items:start;font-size:14px}
+.top .n{font-family:var(--mono);color:var(--accent);font-weight:600}
+.note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:6px;padding:8px 10px}
+.small{font-size:13px;color:var(--muted)}
+.hidden{display:none!important}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}.tabs button{all:unset;cursor:pointer;padding:5px 10px;border-radius:999px;font-size:13px;border:1px solid var(--line)}.tabs button[aria-pressed=true]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.thumbs{display:flex;flex-wrap:wrap;gap:6px}.thumbs img{width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.wires{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.wire{display:flex;flex-direction:column;gap:6px;min-width:0}
+.wire .cap{font-size:12px;color:var(--muted)}
+.wire svg{width:100%;height:auto;display:block;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.wire svg text{font-family:var(--sans);font-size:9px;fill:var(--fg)}
+.wire svg .blk{fill:var(--soft);stroke:var(--line)}
+.wire svg .blk.primary{fill:var(--accent);stroke:var(--accent)}.wire svg .blk.primary+text{fill:var(--accent-fg);font-weight:600}
+.wire svg .blk.secondary{fill:var(--panel);stroke:var(--accent)}
+.wire svg .blk.muted{fill:var(--soft);stroke:var(--line);opacity:.5}
+.wire svg .blk.problem{stroke:var(--bad);stroke-dasharray:3 2;stroke-width:1.5}
+.wire svg .blk.image{fill:url(#hatch)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.pair{grid-template-columns:1fr}}
+.example{border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.example .t{font-weight:600}
+.list{display:flex;flex-direction:column;gap:6px}
+.list .it{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px}
+.list .it .m{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.list .it .m b{display:block;font-weight:600}
+</style>
+</head>
+<body>
+<nav class="suite-nav" aria-label="Growth suite"><a href="/" class="suite-brand">Growth Suite</a><a href="/" data-p="/">Toolkit</a><a href="/audit/" data-p="/audit/">UX audit</a><a href="/copy/" data-p="/copy/">Regulated copy</a><a href="/ideation/" data-p="/ideation/">Ideation room</a><a href="/pricing/" data-p="/pricing/">Pricing simulator</a></nav>
+<style>.suite-nav{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:8px 0 4px;font-size:13px}.suite-nav a{color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:999px;border:1px solid transparent}.suite-nav a:hover{background:var(--soft)}.suite-nav a[aria-current=page]{background:var(--accent-soft);color:var(--accent);font-weight:600}.suite-nav .suite-brand{font-weight:700;color:var(--fg);margin-right:6px;padding-left:0}</style>
+<script>(function(){const p=location.pathname.replace(/index\.html$/,'');document.querySelectorAll('.suite-nav a[data-p]').forEach(a=>{if(a.dataset.p===p)a.setAttribute('aria-current','page')})})();</script>
+<header>
+  <div><h1>Laws of UX Audit</h1><p class="sub">Upload or paste a page's HTML and it is checked against the 30 Laws of UX: a deterministic pass that measures what can be measured (choices, targets, chunking, form length, speed proxies), then a reviewer pass that reads the page and judges the rest. Every finding names the law, the evidence and a testable fix.</p></div>
+  <div class="actions"><span class="pill" id="aiPill">AI: checking</span><button class="btn small" id="sample">Load sample page</button></div>
+</header>
+
+<div class="layout">
+<aside class="panel">
+  <h3>Page to audit</h3>
+  <div class="field"><label for="url">URL (for the record)</label><input id="url" placeholder="https://"></div>
+  <div class="field"><label for="goal">Primary goal of the page</label><input id="goal" placeholder="e.g. start the assessment, add to basket, submit lead form"></div>
+  <div class="field"><label for="device">Primary device</label><select id="device"><option>Mobile</option><option>Desktop</option></select></div>
+  <div class="actions"><label class="btn small" for="file">Upload .html</label><input id="file" type="file" accept=".html,.htm,.txt" class="hidden"><span class="status" id="fileStatus"></span></div>
+  <div class="field"><label for="html">HTML source (or the visible copy if that is all you have)</label><textarea id="html" placeholder="<html>..."></textarea></div>
+  <div class="actions" id="shotRow"><label class="btn small" for="shots">Add screenshots (optional)</label><input id="shots" type="file" accept="image/*" multiple class="hidden"><span class="status" id="shotStatus"></span></div><div class="thumbs" id="thumbs"></div>
+  <div class="actions"><button class="btn primary" id="run">Audit</button><button class="btn small" id="copy" disabled>Copy report</button><button class="btn small" id="save" disabled>Save report</button><button class="btn small" id="download" disabled>Download .html</button><span class="status" id="status"></span></div>
+  <div class="panel" style="padding:10px" id="savedPanel"><h3>Saved reports</h3><div class="list" id="saved"><span class="small">Nothing saved yet.</span></div></div>
+  <div class="note">The deterministic checks run in the page on the DOM. The reviewer pass sends the visible text and structure to Claude with the laws as the rubric; the AI never changes a measured number.</div>
+</aside>
+
+<div class="right">
+  <div class="panel" id="summary"><h2>Scorecard</h2><p class="small">Load a page and press Audit.</p></div>
+  <div class="panel hidden" id="topPanel"><h2>What to fix first</h2><div class="top" id="top"></div></div>
+  <div class="panel hidden" id="exPanel"><h2>Example layouts</h2><p class="small">Wireframe sketches of the current layout and the proposed fix for the top findings, drawn from the reviewer's description. They show hierarchy and placement, not visual design.</p><div class="wires" id="examples"></div></div>
+  <div class="panel"><div class="actions" style="justify-content:space-between"><h2>Findings by law</h2><div class="tabs" id="filter"><button data-f="all" aria-pressed="true">All</button><button data-f="bad">Fails</button><button data-f="warn">Attention</button><button data-f="good">Passes</button></div></div><div class="laws" id="laws"></div></div>
+  <details class="panel"><summary>The 30 laws used as the rubric</summary><div class="small" id="rubric" style="margin-top:8px"></div></details>
+</div>
+</div>
+
+<script>
+/* Runtime shim: outside claude.ai, AI goes to /api/ai, the report library to /api/store, downloads to a plain file save. */
+(function(){
+  if(window.claude&&window.claude.use)return;
+  async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||r.statusText),{code:r.status===429?'rate_limited':'error'});return j}
+  const toDataUrl=b=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(b)});
+  const sample=async(input,opts={})=>{const images=opts.images?await Promise.all([...opts.images].map(toDataUrl)):[];const j=await post('/api/ai',{input,json:false,images});return{text:j.text,truncated:false}};
+  sample.json=async(input,opts={})=>{const images=opts.images?await Promise.all([...opts.images].map(toDataUrl)):[];const j=await post('/api/ai',{input,json:true,images});return j.value};
+  sample.limits=async()=>({maxPromptBytes:250000,images:{maxCount:6,maxInputBytes:4000000,mediaTypes:['image/jpeg','image/png','image/webp']}});
+  const KEY='audit:reports';const listeners=[];
+  async function all(){const j=await post('/api/store',{op:'hgetall',key:KEY});return Object.entries(j.value||{}).map(([id,d])=>({id,exists:true,data:()=>d}))}
+  async function notify(){const docs=await all();listeners.forEach(f=>f({docs}))}
+  const db={collection(){return{
+    async add(data){const id=Date.now().toString(36)+Math.random().toString(36).slice(2,7);await post('/api/store',{op:'hset',key:KEY,field:id,value:data});notify();return{id}},
+    doc(id){return{async get(){const j=await post('/api/store',{op:'hget',key:KEY,field:id});return{id,exists:j.value!=null,data:()=>j.value||undefined}},async delete(){await post('/api/store',{op:'hdel',key:KEY,field:id});notify()}}},
+    orderBy(f,dir){const self=this;return{limit(n){return{onSnapshot(next,err){const fn=s=>{const docs=s.docs.slice().sort((a,b)=>(b.data()[f]||'').localeCompare(a.data()[f]||''));next({docs:dir==='desc'?docs.slice(0,n):docs.reverse().slice(0,n)})};listeners.push(fn);all().then(docs=>fn({docs})).catch(err||(()=>{}));const t=setInterval(()=>all().then(docs=>fn({docs})).catch(()=>{}),30000);return()=>clearInterval(t)}}}}}}}};
+  const downloads={async save({filename,data}){const blob=data instanceof Blob?data:new Blob([data],{type:'text/html'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);return{status:'saved'}}};
+  const user={id:async()=>'local',me:async()=>({id:'local'}),isOwner:()=>true,canEdit:()=>true,can:()=>true};
+  const caps={sample,db,downloads,user};window.claude={use:async n=>caps[n]||null};
+})();
+</script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- Rubric: the 30 Laws of UX (lawsofux.com, Jon Yablonski) ---------- */
+const LAWS=[
+ {id:'aesthetic',name:'Aesthetic-Usability Effect',group:'Perception',def:'Users often perceive aesthetically pleasing design as design that is more usable.'},
+ {id:'choice',name:'Choice Overload',group:'Decisions',def:'People get overwhelmed when presented with a large number of options.'},
+ {id:'chunking',name:'Chunking',group:'Memory',def:'Individual pieces of information are broken down and grouped into a meaningful whole.'},
+ {id:'bias',name:'Cognitive Bias',group:'Decisions',def:'Systematic errors in judgment that influence perception and decision-making.'},
+ {id:'load',name:'Cognitive Load',group:'Memory',def:'The amount of mental resources needed to understand and interact with an interface.'},
+ {id:'doherty',name:'Doherty Threshold',group:'Performance',def:'Productivity soars when a computer and its users interact at a pace (<400ms) that ensures neither has to wait.'},
+ {id:'fitts',name:'Fitts’s Law',group:'Interaction',def:'The time to acquire a target is a function of the distance to and size of the target.'},
+ {id:'flow',name:'Flow',group:'Interaction',def:'The mental state of being fully immersed in an activity with energised focus.'},
+ {id:'goal',name:'Goal-Gradient Effect',group:'Motivation',def:'The tendency to approach a goal increases with proximity to the goal.'},
+ {id:'hick',name:'Hick’s Law',group:'Decisions',def:'The time to make a decision increases with the number and complexity of choices.'},
+ {id:'jakob',name:'Jakob’s Law',group:'Perception',def:'Users prefer your site to work the same way as all the other sites they already know.'},
+ {id:'region',name:'Law of Common Region',group:'Gestalt',def:'Elements are perceived as groups when they share an area with a clearly defined boundary.'},
+ {id:'proximity',name:'Law of Proximity',group:'Gestalt',def:'Objects near each other tend to be grouped together.'},
+ {id:'pragnanz',name:'Law of Prägnanz',group:'Gestalt',def:'People interpret ambiguous or complex images as the simplest form possible.'},
+ {id:'similarity',name:'Law of Similarity',group:'Gestalt',def:'Similar elements are perceived as a complete picture, shape or group.'},
+ {id:'connected',name:'Law of Uniform Connectedness',group:'Gestalt',def:'Visually connected elements are perceived as more related than unconnected ones.'},
+ {id:'mental',name:'Mental Model',group:'Perception',def:'A compressed model of what we think we know about a system and how it works.'},
+ {id:'miller',name:'Miller’s Law',group:'Memory',def:'The average person can only keep 7 (plus or minus 2) items in working memory.'},
+ {id:'occam',name:'Occam’s Razor',group:'Decisions',def:'Among competing hypotheses that predict equally well, the one with the fewest assumptions should be selected.'},
+ {id:'active',name:'Paradox of the Active User',group:'Interaction',def:'Users never read manuals but start using the software immediately.'},
+ {id:'pareto',name:'Pareto Principle',group:'Decisions',def:'Roughly 80% of the effects come from 20% of the causes.'},
+ {id:'parkinson',name:'Parkinson’s Law',group:'Motivation',def:'Any task will inflate until all of the available time is spent.'},
+ {id:'peakend',name:'Peak-End Rule',group:'Motivation',def:'People judge an experience largely by how they felt at its peak and at its end.'},
+ {id:'postel',name:'Postel’s Law',group:'Interaction',def:'Be liberal in what you accept, and conservative in what you send.'},
+ {id:'attention',name:'Selective Attention',group:'Perception',def:'We focus attention only on a subset of stimuli, usually those related to our goals.'},
+ {id:'serial',name:'Serial Position Effect',group:'Memory',def:'Users best remember the first and last items in a series.'},
+ {id:'tesler',name:'Tesler’s Law',group:'Interaction',def:'For any system there is a certain amount of complexity which cannot be reduced.'},
+ {id:'restorff',name:'Von Restorff Effect',group:'Perception',def:'When multiple similar objects are present, the one that differs is most likely to be remembered.'},
+ {id:'working',name:'Working Memory',group:'Memory',def:'A cognitive system that temporarily holds and manipulates information needed to complete tasks.'},
+ {id:'zeigarnik',name:'Zeigarnik Effect',group:'Motivation',def:'People remember uncompleted or interrupted tasks better than completed tasks.'},
+];
+$('rubric').innerHTML=LAWS.map(l=>`<div><strong>${esc(l.name)}</strong> — ${esc(l.def)}</div>`).join('');
+
+/* ---------- Deterministic measurement ---------- */
+function measure(src){const isHtml=/<[a-z][\s\S]*>/i.test(src);const d=new DOMParser().parseFromString(isHtml?src:'<body><pre>'+src.replace(/</g,'&lt;')+'</pre></body>','text/html');
+  d.querySelectorAll('script,style,noscript,template,svg').forEach(x=>x.remove());
+  const q=s=>[...d.querySelectorAll(s)];const txt=e=>(e.textContent||'').replace(/\s+/g,' ').trim();
+  const body=d.body||d.documentElement;const words=txt(body).split(' ').filter(Boolean);
+  const links=q('a[href]');const navLinks=q('nav a, header a, [role=navigation] a');const buttons=q('button, input[type=submit], input[type=button], a.btn, a[class*="btn"], a[class*="button"], [role=button]');
+  const ctaRe=/\b(start|get started|buy|add to (basket|cart|bag)|sign ?up|subscribe|book|apply|join|try|order|checkout|continue|next|submit|download|shop now|learn more|see more)\b/i;
+  const ctas=buttons.filter(b=>ctaRe.test(txt(b)));const ctaTexts=[...new Set(ctas.map(b=>txt(b)).filter(Boolean))];
+  const forms=q('form');const fields=q('input:not([type=hidden]):not([type=submit]):not([type=button]), select, textarea');const required=fields.filter(f=>f.required||f.getAttribute('aria-required')==='true');
+  const fieldsNoLabel=fields.filter(f=>{const id=f.id;return !(id&&d.querySelector(`label[for="${CSS.escape(id)}"]`))&&!f.closest('label')&&!f.getAttribute('aria-label')&&!f.getAttribute('placeholder')});
+  const inputsNoType=q('input').filter(i=>['email','tel','number','url'].includes((i.name||'').toLowerCase().replace(/.*(email|tel|phone|number|url).*/,'$1'))&&(!i.type||i.type==='text'));
+  const autocompleteMissing=fields.filter(f=>/email|name|phone|tel|postcode|zip|address|card/i.test(f.name||f.id||'')&&!f.getAttribute('autocomplete'));
+  const h1=q('h1');const headings=q('h1,h2,h3,h4,h5,h6');const paras=q('p');const longParas=paras.filter(p=>txt(p).split(' ').length>90);
+  const lists=q('ul,ol');const imgs=q('img');const imgsNoAlt=imgs.filter(i=>!i.hasAttribute('alt'));
+  const scripts=(src.match(/<script\b/gi)||[]).length;const extScripts=(src.match(/<script[^>]+src=/gi)||[]).length;const iframes=q('iframe').length;const bytes=new Blob([src]).size;
+  const smallTargets=buttons.filter(b=>{const st=(b.getAttribute('style')||'');const m=st.match(/height:\s*(\d+)px/);return m&&+m[1]<44});
+  const progress=q('progress, [role=progressbar], [class*="progress"], [class*="step"], [class*="stepper"]').length;
+  const trust=q('[class*="trust"], [class*="review"], [class*="rating"], [class*="testimonial"], [class*="guarantee"], [class*="secure"]').length;
+  const selects=q('select');const bigSelects=selects.filter(s=>s.options.length>15);const radios=q('input[type=radio]').length;const checkboxes=q('input[type=checkbox]').length;
+  const topText=words.slice(0,120).join(' ');const firstHeading=h1[0]?txt(h1[0]):(headings[0]?txt(headings[0]):'');
+  const footerLinks=q('footer a').length;
+  return{isHtml,words:words.length,links:links.length,navLinks:navLinks.length,buttons:buttons.length,ctas:ctas.length,ctaTexts,forms:forms.length,fields:fields.length,required:required.length,fieldsNoLabel:fieldsNoLabel.length,inputsNoType:inputsNoType.length,autocompleteMissing:autocompleteMissing.length,h1:h1.length,headings:headings.length,paras:paras.length,longParas:longParas.length,lists:lists.length,imgs:imgs.length,imgsNoAlt:imgsNoAlt.length,scripts,extScripts,iframes,kb:Math.round(bytes/1024),smallTargets:smallTargets.length,progress,trust,bigSelects:bigSelects.length,radios,checkboxes,firstHeading,topText,visible:txt(body).slice(0,14000),structure:headings.slice(0,40).map(h=>h.tagName.toLowerCase()+': '+txt(h).slice(0,90)).join('\n'),ctaList:ctas.slice(0,20).map(b=>txt(b)).join(' | '),navList:navLinks.slice(0,30).map(a=>txt(a)).filter(Boolean).join(' | ')}}
+
+/* Rules: each returns {verdict:'good'|'warn'|'bad'|'na', evidence, fix} or null to defer entirely to the reviewer */
+function rules(m,goal,device){const mob=device==='Mobile';const r={};
+  r.hick=m.ctas+m.navLinks>14?{verdict:'bad',evidence:`${m.navLinks} navigation links and ${m.ctas} call-to-action buttons compete on one page.`,fix:'Cut navigation to the paths that serve the page goal and leave one primary CTA per viewport; test a stripped nav on paid-traffic entries.'}:m.ctas>4?{verdict:'warn',evidence:`${m.ctas} CTAs: ${m.ctaTexts.slice(0,6).join(', ')}.`,fix:'Make one CTA primary and demote the rest to text links.'}:{verdict:'good',evidence:`${m.ctas} CTAs and ${m.navLinks} nav links.`,fix:''};
+  r.choice=m.bigSelects>0||m.radios>8?{verdict:'warn',evidence:`${m.bigSelects} dropdowns with 15+ options and ${m.radios} radio buttons.`,fix:'Default the most common option, split long lists into steps, or use type-ahead.'}:{verdict:'good',evidence:`No long option lists found (${m.radios} radios, ${m.bigSelects} large selects).`,fix:''};
+  r.miller=m.navLinks>9?{verdict:'warn',evidence:`${m.navLinks} items in navigation; working memory holds around 7.`,fix:'Group navigation into 5–7 top-level items.'}:{verdict:'good',evidence:`${m.navLinks} navigation items.`,fix:''};
+  r.chunking=m.longParas>0||(m.words>400&&m.headings<3)?{verdict:'warn',evidence:`${m.longParas} paragraphs over 90 words; ${m.words} words under ${m.headings} headings; ${m.lists} lists.`,fix:'Break long paragraphs into sub-headed chunks and lists of three to five; one idea per block.'}:{verdict:'good',evidence:`${m.words} words, ${m.headings} headings, ${m.lists} lists, no paragraphs over 90 words.`,fix:''};
+  r.load=m.words>1200||m.fields>8?{verdict:'bad',evidence:`${m.words} words and ${m.fields} form fields (${m.required} required).`,fix:'Remove copy that does not move the visitor toward the goal; defer optional fields to after conversion.'}:m.words>700||m.fields>5?{verdict:'warn',evidence:`${m.words} words, ${m.fields} fields.`,fix:'Trim secondary copy; progressive disclosure for detail.'}:{verdict:'good',evidence:`${m.words} words, ${m.fields} fields.`,fix:''};
+  r.tesler=m.fields>0?(m.autocompleteMissing>0||m.inputsNoType>0?{verdict:'warn',evidence:`${m.autocompleteMissing} fields missing autocomplete; ${m.inputsNoType} email/phone inputs typed as text.`,fix:'Move complexity to the system: autocomplete attributes, correct input types and inputmode, address lookup, prefilled defaults.'}:{verdict:'good',evidence:`${m.fields} fields with autocomplete and types set.`,fix:''}):{verdict:'na',evidence:'No form on the page.',fix:''};
+  r.postel=m.fields>0?(m.fieldsNoLabel>0?{verdict:'warn',evidence:`${m.fieldsNoLabel} fields without a label, aria-label or placeholder.`,fix:'Label every field; accept formats loosely (spaces in postcodes and card numbers, +44 or 0 prefixes) and normalise server-side.'}:{verdict:'good',evidence:'All fields labelled.',fix:'Confirm inputs accept loose formats (spaces, prefixes) and the page never rejects a valid value.'}):{verdict:'na',evidence:'No form on the page.',fix:''};
+  r.fitts=m.smallTargets>0?{verdict:'warn',evidence:`${m.smallTargets} buttons styled under 44px tall.`,fix:'Minimum 44×44px targets, full-width primary CTA on mobile, placed where the thumb rests.'}:{verdict:mob?'warn':'good',evidence:mob?'No inline sizes found to measure; mobile target size needs a visual check.':'No undersized inline targets found.',fix:mob?'Check the primary CTA is at least 44px tall and within thumb reach in the first viewport.':''};
+  r.doherty=m.kb>600||m.extScripts>15||m.iframes>2?{verdict:'bad',evidence:`${m.kb}KB of HTML, ${m.extScripts} external scripts, ${m.iframes} iframes.`,fix:'Defer third-party scripts, lazy-load below-fold embeds, keep interaction feedback under 400ms.'}:m.kb>250||m.extScripts>8?{verdict:'warn',evidence:`${m.kb}KB of HTML, ${m.extScripts} external scripts.`,fix:'Audit tag manager payload; show instant feedback on every tap.'}:{verdict:'good',evidence:`${m.kb}KB of HTML, ${m.extScripts} external scripts.`,fix:''};
+  r.restorff=m.ctas>=2&&m.ctaTexts.length>=3?{verdict:'warn',evidence:`${m.ctaTexts.length} different CTA labels: ${m.ctaTexts.slice(0,5).join(', ')}.`,fix:'One visually distinct primary action; everything else secondary and quieter.'}:m.ctas===0?{verdict:'bad',evidence:'No call to action detected.',fix:'Add one clearly isolated primary action tied to the page goal.'}:{verdict:'good',evidence:`Primary action is distinct (${m.ctaTexts.join(', ')}).`,fix:''};
+  r.goal=m.forms>0&&m.fields>3?(m.progress>0?{verdict:'good',evidence:`Progress indicator present with ${m.fields} fields.`,fix:''}:{verdict:'warn',evidence:`${m.fields} fields with no progress indicator found.`,fix:'Show steps and progress; start the bar partly filled; put the easy questions first.'}):{verdict:'na',evidence:'No multi-field journey on this page.',fix:''};
+  r.zeigarnik=m.forms>0?{verdict:'warn',evidence:'Form present; check whether partial progress is saved and surfaced on return.',fix:'Save partial entries and remind returning visitors where they left off (email or on-page banner).'}:{verdict:'na',evidence:'No form.',fix:''};
+  r.jakob=m.h1===0?{verdict:'warn',evidence:'No H1 found; page structure departs from convention.',fix:'One H1, conventional header with logo-home link, nav, footer with contact and policies.'}:{verdict:'good',evidence:`${m.h1} H1, ${m.navLinks} nav links, footer links present: ${m.footerLinks>0?'yes':'unknown'}.`,fix:''};
+  r.serial=m.navLinks>0?{verdict:'good',evidence:`First nav item: "${(m.navList.split(' | ')[0]||'').slice(0,40)}"; last: "${(m.navList.split(' | ').slice(-1)[0]||'').slice(0,40)}".`,fix:'Put the goal-serving item first or last in navigation; test the CTA as the final nav item.'}:{verdict:'na',evidence:'No navigation detected.',fix:''};
+  r.attention=m.ctas>3||m.imgs>12?{verdict:'warn',evidence:`${m.ctas} CTAs and ${m.imgs} images compete for attention.`,fix:'Remove or demote elements unrelated to the goal from the first two viewports.'}:{verdict:'good',evidence:`${m.ctas} CTAs, ${m.imgs} images.`,fix:''};
+  r.aesthetic=m.imgsNoAlt>0?{verdict:'warn',evidence:`${m.imgsNoAlt} of ${m.imgs} images lack alt text; visual quality needs a screenshot to judge.`,fix:'Fix alt text; verify consistent spacing, type scale and imagery in a visual review.'}:null;
+  return r}
+
+/* ---------- Reviewer pass ---------- */
+let sampleFn=null,result=null,measured=null,shots=[],imgLimits=null;
+(async()=>{try{sampleFn=await window.claude?.use?.('sample')}catch(e){}if(sampleFn){$('aiPill').textContent='AI: ready';$('aiPill').className='pill good';try{imgLimits=(await sampleFn.limits()).images||null}catch(e){}}else{$('aiPill').textContent='AI: unavailable (measured checks only)';$('aiPill').className='pill warn'}if(!imgLimits)$('shotRow').classList.add('hidden')})();
+$('shots').onchange=async e=>{const files=[...e.target.files].slice(0,imgLimits?imgLimits.maxCount:4);shots=[];for(const f of files){shots.push(await shrink(f))}$('thumbs').innerHTML=shots.map(b=>`<img src="${URL.createObjectURL(b)}" alt="screenshot">`).join('');$('shotStatus').textContent=shots.length+' screenshot'+(shots.length===1?'':'s')+' ready'};
+function shrink(file){return new Promise(res=>{const img=new Image();const r=new FileReader();r.onload=()=>{img.onload=()=>{const max=1600;const sc=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>res(b),'image/jpeg',0.85)};img.src=r.result};r.readAsDataURL(file)})}
+async function review(m,goal,device,det){const deferred=LAWS.filter(l=>!det[l.id]||det[l.id].verdict==='na'||['warn'].includes(det[l.id].verdict)).map(l=>l.id);
+  const prompt=`You are a senior UX researcher and CRO specialist doing a heuristic evaluation against the Laws of UX. Judge ONLY from the page content and structure below; do not invent elements. Page goal: ${goal||'not stated'}. Primary device: ${device}.
+For each law listed, give: verdict "good" | "warn" | "bad" | "na" (na only if the law cannot apply to this page), evidence (one or two sentences quoting the page where possible), fix (one specific, testable change written as a CRO hypothesis fragment: what to change and the metric it should move). Be strict and specific; "looks fine" is not evidence.
+Measured facts you must not contradict: ${JSON.stringify({words:m.words,navLinks:m.navLinks,ctas:m.ctas,ctaTexts:m.ctaTexts,fields:m.fields,forms:m.forms,headings:m.headings,images:m.imgs,scripts:m.extScripts,kb:m.kb})}
+Laws to judge (id: definition):\n${LAWS.filter(l=>deferred.includes(l.id)).map(l=>`${l.id}: ${l.name} — ${l.def}`).join('\n')}
+${shots.length?`${shots.length} screenshot(s) of the page are attached in order (#1 is the top of the page). Use them for the visual laws (Aesthetic-Usability, Fitts, Common Region, Proximity, Pr\u00e4gnanz, Similarity, Uniform Connectedness, Von Restorff, Selective Attention) and cite "screenshot #n" in evidence.`:'No screenshots attached; judge visual laws from structure only and say so in evidence.'}
+Then give "top": the 5 highest-impact fixes across ALL laws (including those already measured as fails: ${LAWS.filter(l=>det[l.id]&&det[l.id].verdict==='bad').map(l=>l.name).join(', ')||'none'}), each as {law, fix, metric, principle, before, after, caption}, ordered by expected impact on the page goal. "before" and "after" are wireframe specs of the first one or two viewports: {"blocks":[{"type":"nav|headline|text|cta|image|form|trust|list|price|steps|footer","label":"short label as shown on the page","emphasis":"primary|secondary|muted","size":"s|m|l","problem":true|false}]} with 4 to 9 blocks, top to bottom, where "problem" marks the blocks the fix changes in "before" and "after" shows the proposed layout. "caption" is one sentence saying what moved and why.
+Heading outline:\n${m.structure}\nNavigation: ${m.navList}\nCTAs: ${m.ctaList}\nFirst heading: ${m.firstHeading}\nVisible text:\n${m.visible}
+Return ONLY JSON {"laws":{"<id>":{"verdict":"","evidence":"","fix":""}},"top":[{"law":"","fix":"","metric":"","principle":""}],"summary":"two sentences on the page's biggest strength and biggest weakness"}`;
+  return sampleFn.json(prompt,{modelTier:'default',cache:false,...(shots.length&&imgLimits?{images:shots}:{})})}
+
+function localTop(m,det){const top=[];const nav=m.navList.split(' | ').filter(Boolean);if(det.hick&&det.hick.verdict!=='good')top.push({law:'Hick\u2019s Law',fix:det.hick.fix,metric:'CTA click rate',principle:'fewer choices',caption:'Navigation cut to the goal path and one primary CTA kept in the first viewport.',before:{blocks:[{type:'nav',label:nav.length+' nav links',emphasis:'secondary',size:'s',problem:true},{type:'image',label:'Hero image',size:'l'},{type:'headline',label:m.firstHeading||'Headline',size:'m'},...m.ctaTexts.slice(0,3).map((c,i)=>({type:'cta',label:c,emphasis:i?'secondary':'primary',size:'s',problem:i>0}))]},after:{blocks:[{type:'nav',label:'Logo \u00b7 '+Math.min(4,nav.length)+' links',emphasis:'muted',size:'s'},{type:'headline',label:m.firstHeading||'Headline',size:'m'},{type:'text',label:'One-line promise',size:'s'},{type:'cta',label:m.ctaTexts[0]||'Primary action',emphasis:'primary',size:'m'},{type:'image',label:'Hero image',size:'m'}]}});
+  if(det.load&&det.load.verdict!=='good'&&m.fields>0)top.push({law:'Cognitive Load',fix:det.load.fix,metric:'Form completion rate',principle:'progressive disclosure',caption:'Form split into steps with a progress bar; optional fields deferred.',before:{blocks:[{type:'headline',label:'Start now',size:'s'},{type:'form',label:m.fields+' fields on one screen',size:'l',problem:true},{type:'cta',label:'Continue',emphasis:'primary',size:'s'}]},after:{blocks:[{type:'steps',label:'Step 1 of 3',emphasis:'muted',size:'s'},{type:'headline',label:'Where should we send your plan?',size:'s'},{type:'form',label:'3 fields',size:'m'},{type:'cta',label:'Continue',emphasis:'primary',size:'m'},{type:'trust',label:'No charge if you don\u2019t qualify',emphasis:'muted',size:'s'}]}});
+  return top}
+/* ---------- Saving: shared library via db, file via downloads ---------- */
+let db=null,dl=null,userCap=null,unsub=null;
+(async()=>{try{db=await window.claude?.use?.('db')}catch(e){}try{dl=await window.claude?.use?.('downloads')}catch(e){}try{userCap=await window.claude?.use?.('user')}catch(e){}
+  if(db){try{unsub=db.collection('reports').orderBy('at','desc').limit(50).onSnapshot(snap=>{renderSaved(snap.docs.map(d=>({id:d.id,...d.data()})))},()=>{})}catch(e){}}else{$('savedPanel').querySelector('.small').textContent='Sign in to claude.ai to save reports to the shared library.'}})();
+function reportTitle(){return ($('url').value||measured&&measured.firstHeading||'Untitled page').replace(/^https?:\/\//,'').slice(0,80)}
+$('save').onclick=async()=>{if(!result||!measured)return;if(!db){$('status').textContent='Saving needs a signed-in claude.ai view.';return}$('save').disabled=true;$('status').textContent='Saving…';
+  try{const me=userCap?await userCap.id().catch(()=>null):null;const {visible,structure,...facts}=measured;await db.collection('reports').add({title:reportTitle(),url:$('url').value,goal:$('goal').value,device:$('device').value,at:new Date().toISOString(),by:me,result,measured:facts,html:$('html').value.slice(0,200000)});$('status').textContent='Saved to the library.'}catch(e){$('status').textContent='Could not save: '+(e.message||e.code||'unknown')}finally{$('save').disabled=false}};
+function renderSaved(items){const el=$('saved');if(!items.length){el.innerHTML='<span class="small">Nothing saved yet.</span>';return}el.innerHTML=items.map(r=>{const n=Object.values(r.result&&r.result.laws||{});const bad=n.filter(x=>x.verdict==='bad').length,warn=n.filter(x=>x.verdict==='warn').length;return `<div class="it"><div class="m"><b>${esc(r.title)}</b>${esc((r.at||'').slice(0,16).replace('T',' '))} · ${esc(r.device||'')} · <span style="color:var(--bad)">${bad} fail</span>, <span style="color:var(--warn)">${warn} attention</span></div><div class="actions"><button class="btn small" data-open="${esc(r.id)}">Open</button><button class="btn small" data-del="${esc(r.id)}">×</button></div></div>`}).join('')}
+$('saved').addEventListener('click',async e=>{const o=e.target.closest('[data-open]'),d=e.target.closest('[data-del]');if(!db)return;
+  if(o){const snap=await db.collection('reports').doc(o.dataset.open).get();const r=snap.data();if(!r)return;$('url').value=r.url||'';$('goal').value=r.goal||'';$('device').value=r.device||'Mobile';$('html').value=r.html||'';result=r.result;measured={visible:'',structure:'',...r.measured};renderAll();$('copy').disabled=false;$('save').disabled=false;$('download').disabled=!dl;$('status').textContent='Opened saved report from '+(r.at||'').slice(0,10);window.scrollTo({top:0,behavior:'smooth'})}
+  if(d){if(d.textContent!=='Sure?'){d.textContent='Sure?';setTimeout(()=>d.textContent='×',2500);return}try{await db.collection('reports').doc(d.dataset.del).delete()}catch(e){}}});
+function reportHtml(){const VT={good:'Pass',warn:'Attention',bad:'Fail',na:'N/A'};const col={good:'#1f7a3a',warn:'#b46a00',bad:'#b3261e',na:'#888'};const device=$('device').value;const top=(result.top||[]);
+  const ex=top.filter(t=>t.before&&t.after).map((t,i)=>`<div class="ex"><h3>${i+1}. ${esc(t.law)}</h3><div class="pair"><div><div class="cap">Before</div>${wire(t.before,device)}</div><div><div class="cap">After</div>${wire(t.after,device)}</div></div><p class="small">${esc(t.caption||t.fix)}</p></div>`).join('');
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Laws of UX audit: ${esc(reportTitle())}</title><style>:root{--bg:#fff;--panel:#fff;--fg:#1c1f22;--muted:#5f6670;--line:#dcdad3;--soft:#eeece6;--accent:#0b6e70;--accent-fg:#fff;--bad:#b3261e}body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#1c1f22;max-width:960px;margin:0 auto;padding:24px 16px;line-height:1.5}h1{font-size:22px}h2{font-size:17px;margin-top:28px;border-bottom:1px solid #dcdad3;padding-bottom:4px}h3{font-size:14px;margin:12px 0 4px}.small{font-size:13px;color:#5f6670}.law{border-left:4px solid #ccc;padding:8px 12px;margin:8px 0;background:#f8f7f4;border-radius:0 6px 6px 0}.law b{display:block}.v{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}.fix{margin-top:4px;font-size:14px}.facts{display:flex;flex-wrap:wrap;gap:6px;font-size:12px}.facts span{background:#eeece6;padding:2px 8px;border-radius:4px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ex{border:1px solid #dcdad3;border-radius:8px;padding:12px;margin:10px 0}.cap{font-size:12px;color:#5f6670}svg{width:100%;height:auto;border:1px solid #dcdad3;border-radius:8px}svg text{font-family:system-ui,sans-serif;font-size:9px;fill:#1c1f22}.blk{fill:#eeece6;stroke:#dcdad3}.blk.primary{fill:#0b6e70;stroke:#0b6e70}.blk.primary+text{fill:#fff;font-weight:600}.blk.secondary{fill:#fff;stroke:#0b6e70}.blk.muted{opacity:.5}.blk.problem{stroke:#b3261e;stroke-dasharray:3 2;stroke-width:1.5}.blk.image{fill:url(#hatch)}ol li{margin:4px 0}@media print{body{padding:0}}</style></head><body>
+<h1>Laws of UX audit: ${esc(reportTitle())}</h1><p class="small">${esc($('url').value||'')} · Goal: ${esc($('goal').value||'-')} · Device: ${esc(device)} · ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}</p>
+${result.summary?`<p>${esc(result.summary)}</p>`:''}
+<div class="facts">${[['Words',measured.words],['Headings',measured.headings],['Nav links',measured.navLinks],['CTAs',measured.ctas],['Form fields',measured.fields],['Images',measured.imgs],['External scripts',measured.extScripts],['HTML KB',measured.kb]].map(([k,v])=>`<span>${k}: <b>${v}</b></span>`).join('')}</div>
+${top.length?`<h2>What to fix first</h2><ol>${top.map(t=>`<li><b>${esc(t.law)}</b>: ${esc(t.fix)} <span class="small">Metric: ${esc(t.metric||'')}${t.principle?' · '+esc(t.principle):''}</span></li>`).join('')}</ol>`:''}
+${ex?`<h2>Example layouts</h2>${ex}`:''}
+<h2>Findings by law</h2>${LAWS.map(l=>{const r=result.laws[l.id];if(!r)return '';return `<div class="law" style="border-left-color:${col[r.verdict]||'#ccc'}"><span class="v" style="color:${col[r.verdict]||'#888'}">${VT[r.verdict]||r.verdict}</span><b>${esc(l.name)}</b><span class="small">${esc(l.def)}</span>${r.evidence?`<div>${esc(r.evidence)}</div>`:''}${r.fix?`<div class="fix"><b>Fix to test:</b> ${esc(r.fix)}</div>`:''}</div>`}).join('')}
+<p class="small">Rubric: Laws of UX by Jon Yablonski (lawsofux.com). Measured checks run on the page DOM; reviewer judgements are a heuristic evaluation, not user research.</p></body></html>`}
+$('download').onclick=async()=>{if(!result||!measured)return;if(!dl){$('status').textContent='Downloads are not available in this view; use Copy report.';return}try{const r=await dl.save({filename:`ux-audit-${reportTitle().replace(/[^\w.-]+/g,'-').toLowerCase()}.html`,data:reportHtml()});$('status').textContent=r.status==='saved'?'Report saved.':'Report delivered.'}catch(e){$('status').textContent=e&&e.code==='declined'?'Download cancelled.':'Could not download: '+(e.message||e.code||'unknown')}};
+/* ---------- Run ---------- */
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{$('html').value=t;$('fileStatus').textContent=f.name+' loaded'})};
+$('run').onclick=async()=>{const src=$('html').value.trim();if(!src){$('status').textContent='Paste or upload the page first.';return}const goal=$('goal').value,device=$('device').value;
+  measured=measure(src);const det=rules(measured,goal,device);result={laws:{},top:[],summary:''};LAWS.forEach(l=>{if(det[l.id])result.laws[l.id]={...det[l.id],source:'measured'}});
+  renderAll();
+  if(sampleFn){$('status').textContent='Reviewer pass running…';$('run').disabled=true;try{const r=await review(measured,goal,device,det);Object.entries(r.laws||{}).forEach(([id,v])=>{if(!LAWS.find(l=>l.id===id))return;const cur=result.laws[id];if(!cur||cur.verdict==='na'||cur.verdict==='warn'||!cur.source)result.laws[id]={verdict:v.verdict||'warn',evidence:v.evidence||'',fix:v.fix||'',source:cur&&cur.source==='measured'?'measured + reviewed':'reviewed'};else if(v.fix&&!cur.fix)cur.fix=v.fix});result.top=r.top||[];result.summary=r.summary||'';$('status').textContent=''}catch(e){$('status').textContent='Reviewer pass failed: '+(e.message||e.code||'unknown')+'. Measured results shown.';LAWS.forEach(l=>{if(!result.laws[l.id])result.laws[l.id]={verdict:'na',evidence:'Not judged: the reviewer pass did not run.',fix:'',source:'none'}});if(!result.top.length)result.top=localTop(measured,det)}finally{$('run').disabled=false}}
+  else{LAWS.forEach(l=>{if(!result.laws[l.id])result.laws[l.id]={verdict:'na',evidence:'Needs the reviewer pass (AI unavailable in this view).',fix:'',source:'none'}});result.top=localTop(measured,det)}
+  renderAll();$('copy').disabled=false;$('save').disabled=!db;$('download').disabled=!dl};
+
+let filter='all';$('filter').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;filter=b.dataset.f;$('filter').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderLaws()});
+const VT={good:'Pass',warn:'Attention',bad:'Fail',na:'N/A'};
+function renderAll(){const ls=Object.values(result.laws);const n={good:0,warn:0,bad:0,na:0};ls.forEach(x=>n[x.verdict]=(n[x.verdict]||0)+1);const judged=n.good+n.warn+n.bad;const score=judged?Math.round((n.good+0.5*n.warn)/judged*100):0;const col=score>=75?'var(--good)':score>=50?'var(--warn)':'var(--bad)';const C=2*Math.PI*34;
+  $('summary').innerHTML=`<h2>Scorecard</h2><div class="score"><svg class="ring" viewBox="0 0 84 84"><circle cx="42" cy="42" r="34" fill="none" stroke="var(--soft)" stroke-width="8"/><circle cx="42" cy="42" r="34" fill="none" stroke="${col}" stroke-width="8" stroke-dasharray="${C*score/100} ${C}" transform="rotate(-90 42 42)" stroke-linecap="round"/><text x="42" y="48" text-anchor="middle">${score}</text></svg><div><div class="stats" style="grid-template-columns:repeat(4,minmax(90px,1fr))"><div class="stat"><span class="k">Pass</span><span class="v" style="color:var(--good)">${n.good}</span></div><div class="stat"><span class="k">Attention</span><span class="v" style="color:var(--warn)">${n.warn}</span></div><div class="stat"><span class="k">Fail</span><span class="v" style="color:var(--bad)">${n.bad}</span></div><div class="stat"><span class="k">N/A</span><span class="v">${n.na||0}</span></div></div>${result.summary?`<p style="margin-top:8px">${esc(result.summary)}</p>`:'<p class="small" style="margin-top:8px">Score = passes plus half of attention items, over laws judged. '+(ls.length<LAWS.length?'Reviewer pass pending.':'')+'</p>'}</div></div>
+  <h3 style="margin-top:6px">Measured facts</h3><div class="facts">${[['Words',measured.words],['Headings',measured.headings],['Nav links',measured.navLinks],['CTAs',measured.ctas],['Form fields',measured.fields],['Required',measured.required],['Images',measured.imgs],['No alt',measured.imgsNoAlt],['Ext. scripts',measured.extScripts],['HTML KB',measured.kb],['Iframes',measured.iframes],['Lists',measured.lists]].map(([k,v])=>`<div class="fact"><span>${k}</span><b>${v}</b></div>`).join('')}</div>`;
+  if(result.top&&result.top.length){$('topPanel').classList.remove('hidden');$('top').innerHTML=result.top.map((t,i)=>`<div class="t"><span class="n">${i+1}</span><div><strong>${esc(t.law)}</strong>: ${esc(t.fix)} <span class="small">Metric: ${esc(t.metric||'')}${t.principle?' · '+esc(t.principle):''}</span></div></div>`).join('')}else $('topPanel').classList.add('hidden');
+  renderExamples();renderLaws()}
+function wire(spec,device){const mob=device==='Mobile';const W=mob?180:320,pad=10;const blocks=(spec&&spec.blocks||[]).slice(0,9);const hgt={s:16,m:28,l:48};let y=pad;let out='';
+  blocks.forEach(b=>{const h=b.type==='image'?(hgt[b.size]||28)+8:b.type==='form'?Math.max(hgt[b.size]||28,36):(hgt[b.size]||28);const cls=['blk',b.emphasis||'',b.type==='image'?'image':'',b.problem?'problem':''].join(' ');const x=b.type==='cta'&&!mob?W*0.3:pad,w=b.type==='cta'&&!mob?W*0.4:W-2*pad;
+    out+=`<rect class="${cls}" x="${x}" y="${y}" width="${w}" height="${h}" rx="3"/>`;const label=String(b.label||b.type).slice(0,mob?26:48);out+=`<text x="${x+6}" y="${y+h/2+3}">${esc(label)}</text>`;if(b.type==='form'){for(let i=0;i<3;i++)out+=`<rect x="${x+6}" y="${y+6+i*10}" width="${w*0.55}" height="7" rx="1" fill="none" stroke="var(--line)"/>`}y+=h+6});
+  const H=y+pad;return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${mob?'mobile':'desktop'} wireframe"><defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="var(--line)" stroke-width="2"/></pattern></defs><rect x="0" y="0" width="${W}" height="${H}" fill="var(--panel)"/>${out}</svg>`}
+function renderExamples(){const top=(result.top||[]).filter(t=>t.before&&t.after);if(!top.length){$('exPanel').classList.add('hidden');return}$('exPanel').classList.remove('hidden');const device=$('device').value;$('examples').innerHTML=top.map((t,i)=>`<div class="example"><div class="t">${i+1}. ${esc(t.law)}</div><div class="pair"><div class="wire"><span class="cap">Before (dashed = problem)</span>${wire(t.before,device)}</div><div class="wire"><span class="cap">After</span>${wire(t.after,device)}</div></div><div class="small">${esc(t.caption||t.fix)}</div></div>`).join('')}
+function renderLaws(){const groups=[...new Set(LAWS.map(l=>l.group))];$('laws').innerHTML=groups.map(g=>{const items=LAWS.filter(l=>l.group===g).map(l=>({l,r:result.laws[l.id]})).filter(x=>x.r&&(filter==='all'||x.r.verdict===filter));if(!items.length)return '';return `<div class="group"><h3>${esc(g)}</h3>${items.map(({l,r})=>`<div class="law ${r.verdict}"><div class="head"><span class="name">${esc(l.name)}</span><span class="actions"><span class="pill">${esc(r.source||'')}</span><span class="pill ${r.verdict==='na'?'':r.verdict}">${VT[r.verdict]||r.verdict}</span></span></div><div class="def">${esc(l.def)}</div>${r.evidence?`<div class="ev">${esc(r.evidence)}</div>`:''}${r.fix?`<div class="fix"><b>Fix to test</b>${esc(r.fix)}</div>`:''}</div>`).join('')}</div>`}).join('')||'<p class="small">Nothing in this filter.</p>'}
+
+$('copy').onclick=()=>{if(!result)return;const md=`# Laws of UX audit: ${$('url').value||'page'}\nGoal: ${$('goal').value||'-'} · Device: ${$('device').value}\n\n${result.summary?result.summary+'\n\n':''}## Fix first\n${(result.top||[]).map((t,i)=>`${i+1}. **${t.law}**: ${t.fix} _(metric: ${t.metric})_`).join('\n')}\n\n## By law\n| Law | Verdict | Evidence | Fix |\n|---|---|---|---|\n${LAWS.map(l=>{const r=result.laws[l.id];return r?`| ${l.name} | ${VT[r.verdict]} | ${(r.evidence||'').replace(/\|/g,'/')} | ${(r.fix||'').replace(/\|/g,'/')} |`:''}).filter(Boolean).join('\n')}\n\n_Measured: ${measured.words} words, ${measured.navLinks} nav links, ${measured.ctas} CTAs, ${measured.fields} fields, ${measured.imgs} images, ${measured.extScripts} external scripts, ${measured.kb}KB._`;navigator.clipboard.writeText(md).then(()=>{$('copy').textContent='Copied';setTimeout(()=>$('copy').textContent='Copy report',1500)}).catch(()=>{})};
+
+$('sample').onclick=()=>{$('url').value='https://example-weightcare.com/start';$('goal').value='Start the assessment';$('device').value='Mobile';$('html').value=`<!doctype html><html><head><title>Medical weight loss</title>
+<script src="https://cdn.example.com/tag-manager.js"><\/script><script src="https://cdn.example.com/chat.js"><\/script><script src="https://cdn.example.com/heatmap.js"><\/script><script src="https://cdn.example.com/ab.js"><\/script><script src="https://cdn.example.com/pixel1.js"><\/script><script src="https://cdn.example.com/pixel2.js"><\/script><script src="https://cdn.example.com/pixel3.js"><\/script><script src="https://cdn.example.com/video.js"><\/script><script src="https://cdn.example.com/fonts.js"><\/script>
+</head><body>
+<header><a href="/">WeightCare</a><nav><a href="/how">How it works</a><a href="/medications">Medications</a><a href="/pricing">Pricing</a><a href="/reviews">Reviews</a><a href="/blog">Blog</a><a href="/about">About</a><a href="/faq">FAQ</a><a href="/clinicians">Clinicians</a><a href="/science">Science</a><a href="/contact">Contact</a><a href="/login">Log in</a><a href="/start" class="btn">Start assessment</a></nav></header>
+<section class="hero"><img src="hero.jpg"><h1>Take control of your weight</h1><p>Personalised medical weight loss, delivered to your door. Our programme combines clinician oversight with nutrition and movement support so you can lose weight and keep it off for good, with check-ins, coaching and a plan built around your life.</p><a href="/start" class="btn">Start your free assessment</a><a href="/how" class="btn">Learn more</a><a href="/pricing" class="btn">See pricing</a></section>
+<section><h2>Trusted by 50,000+ members</h2><img src="l1.png"><img src="l2.png"><img src="l3.png"><img src="l4.png"><img src="l5.png"><img src="l6.png"><img src="l7.png"><img src="l8.png"></section>
+<section><h2>How it works</h2><p>Take the quiz. A clinician reviews your answers. If appropriate, treatment is delivered to your door and your coach checks in weekly. You can pause or cancel at any time from your account. We'll ask about your medical history, current medications, weight history, goals and lifestyle, and you'll need photo ID and a recent weight. Most people complete the assessment in 10 to 15 minutes and hear back within 24 hours, often sooner during weekday working hours. If you don't qualify we'll explain why and suggest alternatives, and there's no charge for the assessment itself under any circumstances.</p></section>
+<section><h2>Start now</h2><form><input name="first_name" type="text"><input name="email" type="text"><input name="phone" type="text"><input name="postcode" type="text"><select name="goal"><option>Lose 5kg</option><option>Lose 10kg</option><option>Lose 15kg</option><option>Lose 20kg</option><option>Lose 25kg</option><option>Lose 30kg</option><option>Lose 35kg</option><option>Lose 40kg</option><option>Lose 45kg</option><option>Lose 50kg</option><option>Lose 55kg</option><option>Lose 60kg</option><option>Lose 65kg</option><option>Lose 70kg</option><option>Lose 75kg</option><option>Lose 80kg</option></select><input name="height" type="text"><input name="weight" type="text"><input name="age" type="text"><button type="submit">Continue</button></form></section>
+<section><h2>From £149/month</h2><p>Our clinicians are registered with the GMC.</p><a href="/pricing" class="btn">View plans</a></section>
+<section><h2>FAQs</h2><p>Is it safe? Who is eligible? What if I don't qualify? Can I cancel?</p></section>
+<footer><a href="/privacy">Privacy</a><a href="/terms">Terms</a><a href="/contact">Contact</a></footer>
+</body></html>`;$('fileStatus').textContent='Sample loaded'};
+})();
+</script>
+</body>
+</html>

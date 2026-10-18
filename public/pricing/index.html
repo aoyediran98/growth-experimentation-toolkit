@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pricing and Messaging Simulator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: assumptions on the left, scenario table and CVR-vs-LTV chart on the right; the tension is the headline. */
+:root{
+  --bg:#f6f5f2;--panel:#fff;--fg:#1c1f22;--muted:#5f6670;--line:#dcdad3;--soft:#eeece6;
+  --accent:#0b6e70;--accent-fg:#fff;--accent-soft:#dff0ef;
+  --good:#1f7a3a;--warn:#b46a00;--bad:#b3261e;--good-soft:#e2f2e6;--warn-soft:#fbeedb;--bad-soft:#f9e0de;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;padding-block:0 32px;padding-inline:16px;max-width:1240px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}
+h1{font-size:22px;font-weight:600}
+h2{font-size:17px;font-weight:600}
+h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p{margin:0}
+header{padding-block:20px 12px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline}
+header .sub{color:var(--muted);font-size:14px;max-width:70ch}
+.layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:20px;padding-top:18px}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:12px;font-weight:500;color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.field label span{font-family:var(--mono);color:var(--fg)}
+input[type=number],select{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;font-family:var(--mono)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:7px 12px}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.small{padding:4px 9px;font-size:13px;font-weight:500}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.right{display:flex;flex-direction:column;gap:14px;min-width:0}
+.headline{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.stat .v{font-family:var(--mono);font-size:19px;font-weight:500;font-variant-numeric:tabular-nums}
+.stat .d{font-size:12px;color:var(--muted)}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.accent{background:var(--accent-soft);color:var(--accent)}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:middle}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;white-space:nowrap}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+td .rng{font-size:11px;color:var(--muted);display:block}
+tr.sel td{background:var(--accent-soft)}
+tr.base td{font-weight:600}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.chart .axis{stroke:var(--line)}.chart .grid{stroke:var(--line);stroke-dasharray:2 3}
+.chart .ltvbar{fill:var(--accent)}.chart .rpvbar{fill:var(--accent);opacity:.35}
+.chart .whisker{stroke:var(--fg);stroke-width:1.5}
+.chart .zero{stroke:var(--fg);stroke-width:1}
+.chart .lbl{fill:var(--fg);font-family:var(--sans);font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:4px;background:var(--accent)}
+.legend i.rpv{opacity:.35}
+.note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:6px;padding:8px 10px;max-width:80ch}
+.frame{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:13px;padding:6px 0;border-top:1px solid var(--line)}
+.frame:first-of-type{border-top:0}
+.frame .name{font-weight:600}
+.frame .desc{grid-column:1/-1;color:var(--muted);font-size:12px}
+.frame .asm{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.frame .asm .field label{font-size:11px}
+.frame .asm input{padding:4px 6px;font-size:12px}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.retcurve{display:flex;gap:4px;align-items:flex-end;height:48px}
+.retcurve div{flex:1;background:var(--accent);opacity:.5;border-radius:2px 2px 0 0;min-width:0}
+.verdict{border-left:3px solid var(--accent);padding:8px 12px;font-size:14px}
+.verdict.bad{border-color:var(--bad)}.verdict.good{border-color:var(--good)}
+</style>
+</head>
+<body>
+<nav class="suite-nav" aria-label="Growth suite"><a href="/" class="suite-brand">Growth Suite</a><a href="/" data-p="/">Toolkit</a><a href="/audit/" data-p="/audit/">UX audit</a><a href="/copy/" data-p="/copy/">Regulated copy</a><a href="/ideation/" data-p="/ideation/">Ideation room</a><a href="/pricing/" data-p="/pricing/">Pricing simulator</a></nav>
+<style>.suite-nav{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:8px 0 4px;font-size:13px}.suite-nav a{color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:999px;border:1px solid transparent}.suite-nav a:hover{background:var(--soft)}.suite-nav a[aria-current=page]{background:var(--accent-soft);color:var(--accent);font-weight:600}.suite-nav .suite-brand{font-weight:700;color:var(--fg);margin-right:6px;padding-left:0}</style>
+<script>(function(){const p=location.pathname.replace(/index\.html$/,'');document.querySelectorAll('.suite-nav a[data-p]').forEach(a=>{if(a.dataset.p===p)a.setAttribute('aria-current','page')})})();</script>
+<header>
+  <div><h1>Pricing and Messaging Simulator</h1><p class="sub">Try price points and offer framings against a baseline funnel and retention curve. The question it answers: does the conversion win survive six months?</p></div>
+  <div class="actions"><button class="btn small" id="preset">Load example: telehealth subscription</button><button class="btn small" id="copy">Copy results</button></div>
+</header>
+
+<div class="layout">
+<aside class="panel">
+  <h3>Baseline</h3>
+  <div class="grid2">
+    <div class="field"><label for="price">List price / month £</label><input id="price" type="number" step="1" value="49"></div>
+    <div class="field"><label for="cvr">Baseline CVR %</label><input id="cvr" type="number" step="0.1" value="3.0"></div>
+    <div class="field"><label for="cogs">Cost to serve / order £</label><input id="cogs" type="number" step="1" value="18"></div>
+    <div class="field"><label for="horizon">Horizon (months)</label><input id="horizon" type="number" min="1" max="24" value="6"></div>
+  </div>
+  <h3>Retention</h3>
+  <div class="field"><label for="ret">Month-to-month retention <span id="retV"></span></label><input id="ret" type="range" min="40" max="98" value="78"></div>
+  <div class="field"><label for="m1">Extra month-1 drop (trial churn) <span id="m1V"></span></label><input id="m1" type="range" min="0" max="40" value="10"></div>
+  <div class="retcurve" id="retcurve" aria-hidden="true"></div>
+  <h3>Sensitivity</h3>
+  <div class="field"><label for="elast">Price elasticity of CVR <span id="elastV"></span></label><input id="elast" type="range" min="-30" max="0" value="-8"></div>
+  <p class="note">−1.2 means a 10% price rise cuts CVR by about 12%. Health DTC usually sits between −0.8 and −2.0.</p>
+  <div class="field"><label for="relast">Price effect on retention <span id="relastV"></span></label><input id="relast" type="range" min="-10" max="0" value="-3"></div>
+  <div class="field"><label for="unc">Assumption uncertainty ± <span id="uncV"></span></label><input id="unc" type="range" min="0" max="60" value="30"></div>
+  <p class="note">Every lift below is treated as a range of ± this share of its value. 2,000 Monte Carlo draws give the P10 to P90 band.</p>
+  <h3>Price points to try</h3>
+  <div class="field"><label for="prices">Comma separated £</label><input id="prices" type="text" value="39, 45, 49, 55, 59" style="font-family:var(--mono);font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%"></div>
+</aside>
+
+<div class="right">
+  <div class="headline" id="headline"></div>
+  <div class="verdict" id="verdict"></div>
+  <div class="panel">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:baseline"><h2>Scenarios</h2><span class="legend"><span><i></i>LTV / visitor, P10–P90</span><span><i class="rpv"></i>First-order RPV</span></span></span></div>
+    <svg class="chart" id="chart" viewBox="0 0 760 300" role="img" aria-label="LTV per visitor and first-order revenue per visitor by scenario"></svg>
+    <div class="tablewrap"><table id="tbl"></table></div>
+    <p class="note">CVR win but LTV loss is flagged when conversion rises against baseline while P50 LTV per visitor falls. Those are the tests that look like wins at day 14 and cost money by month 6.</p>
+  </div>
+  <div class="panel">
+    <h2>Offer framings and their assumptions</h2>
+    <p class="note">Defaults are typical ranges from DTC subscription testing; edit them to your own evidence. Lifts are relative to baseline and apply on top of the price effect.</p>
+    <div id="frames"></div>
+  </div>
+  <details class="panel"><summary>How the maths works</summary>
+    <p style="font-size:13.5px;max-width:80ch;margin-top:8px">CVR at a price = baseline CVR × (price ÷ baseline price)<sup>elasticity</sup> × (1 + framing CVR lift). Retention at a price = baseline retention × (1 + retention elasticity × price change), then × (1 + framing retention lift), capped at 99%. First-order RPV = CVR × first-order revenue. LTV per customer over the horizon = Σ monthly revenue × survival, where survival in month m is (1 − month-1 drop) × retention<sup>m−1</sup>, and bundles pre-pay their months so survival is 1 for those months. Contribution LTV subtracts cost to serve per billed month. LTV per visitor = CVR × LTV per customer. Uncertainty: each lift and the elasticities are drawn from a normal with standard deviation = uncertainty × |value| ÷ 1.28, so the ± band is roughly P10–P90 on each input. Nothing here is a prediction; it is a way to see which assumptions a test result would have to overturn.</p>
+  </details>
+</div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const fmtGBP=x=>'£'+x.toFixed(2);
+const fmtPct=(x,d=1)=>(x*100).toFixed(d)+'%';
+
+/* Framings: cvr = relative CVR lift; aov = multiplier on first-order revenue; rec = multiplier on recurring price; ret = relative retention lift; prepay = months paid up front; trial = first month multiplier */
+const FRAMES=[
+  {id:'list',name:'List price (control)',desc:'Price shown plainly, monthly billing.',cvr:0,ret:0,rec:1,prepay:1,trial:1},
+  {id:'anchor',name:'Anchor',desc:'Show a higher reference price crossed out next to the real price. Pure presentation; nothing changes after purchase.',cvr:0.08,ret:0,rec:1,prepay:1,trial:1},
+  {id:'trial',name:'Discounted first month',desc:'First month at half price, then full price. Pulls in marginal buyers who churn more at the first renewal.',cvr:0.25,ret:-0.12,rec:1,prepay:1,trial:0.5},
+  {id:'bundle',name:'3-month bundle (−15%)',desc:'Pay three months up front at 15% off. Fewer convert, but months 1–3 are guaranteed.',cvr:-0.10,ret:0.05,rec:0.85,prepay:3,trial:1},
+  {id:'sub',name:'Subscribe & save (−15% recurring)',desc:'Lower recurring price in exchange for subscription commitment. Lifts CVR and retention, cuts price every month.',cvr:0.12,ret:0.06,rec:0.85,prepay:1,trial:1},
+  {id:'pay',name:'Pay monthly, cancel anytime',desc:'Same price, the message removes commitment anxiety. Small CVR lift, slightly higher churn.',cvr:0.06,ret:-0.03,rec:1,prepay:1,trial:1},
+];
+function renderFrames(){$('frames').innerHTML=FRAMES.map(f=>`<div class="frame"><span class="name">${f.name}</span><span class="pill ${f.id==='list'?'accent':''}">${f.id==='list'?'baseline':'editable'}</span><span class="desc">${f.desc}</span>${f.id==='list'?'':`<div class="asm"><div class="field"><label>CVR lift %</label><input type="number" step="1" data-f="${f.id}" data-k="cvr" value="${Math.round(f.cvr*100)}"></div><div class="field"><label>Retention lift %</label><input type="number" step="1" data-f="${f.id}" data-k="ret" value="${Math.round(f.ret*100)}"></div><div class="field"><label>Recurring price ×</label><input type="number" step="0.05" data-f="${f.id}" data-k="rec" value="${f.rec}"></div></div>`}</div>`).join('')}
+renderFrames();
+$('frames').addEventListener('input',e=>{const f=FRAMES.find(x=>x.id===e.target.dataset.f);if(!f)return;const k=e.target.dataset.k;const v=+e.target.value;f[k]=k==='rec'?v:v/100;run()});
+
+function inputs(){return{price:+$('price').value,cvr:+$('cvr').value/100,cogs:+$('cogs').value,horizon:Math.max(1,Math.min(24,+$('horizon').value||6)),ret:+$('ret').value/100,m1:+$('m1').value/100,elast:+$('elast').value/10,relast:+$('relast').value/100,unc:+$('unc').value/100,prices:$('prices').value.split(',').map(s=>+s.trim()).filter(x=>x>0)}}
+function labels(i){$('retV').textContent=fmtPct(i.ret,0);$('m1V').textContent=fmtPct(i.m1,0);$('elastV').textContent=i.elast.toFixed(1);$('relastV').textContent=(i.relast*100).toFixed(0)+'% per +10% price';$('uncV').textContent=fmtPct(i.unc,0);
+  let s='';for(let m=1;m<=i.horizon;m++){const surv=(1-i.m1)*Math.pow(i.ret,m-1);s+=`<div style="height:${Math.max(4,surv*48)}px" title="month ${m}: ${fmtPct(surv,0)}"></div>`}$('retcurve').innerHTML=s}
+
+/* One deterministic evaluation of a scenario with given draws */
+function evaluate(i,price,f,d){const pc=price/i.price-1;
+  const cvr=Math.max(0,i.cvr*Math.pow(price/i.price,i.elast*d.elast)*(1+f.cvr*d.cvr));
+  const ret=Math.min(0.99,Math.max(0,i.ret*(1+i.relast*d.relast*pc*10)*(1+f.ret*d.ret)));
+  const m1=i.m1;let rev=0,contrib=0,first=0;
+  for(let m=1;m<=i.horizon;m++){const pre=m<=f.prepay;const surv=pre?1:(1-m1)*Math.pow(ret,m-1);const p=price*f.rec*(m===1?f.trial:1);rev+=p*surv;contrib+=(p-i.cogs)*surv;if(m<=f.prepay)first+=p}
+  return{cvr,ret,first,rpv:cvr*first,ltvCust:rev,ltv:cvr*rev,cltv:cvr*contrib}}
+function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function simulate(i,price,f,n=2000){const sd=i.unc/1.28;const ltv=[],rpv=[],cvr=[],cltv=[];for(let k=0;k<n;k++){const d={elast:1+gauss()*sd,cvr:1+gauss()*sd,ret:1+gauss()*sd,relast:1+gauss()*sd};const r=evaluate(i,price,f,d);ltv.push(r.ltv);rpv.push(r.rpv);cvr.push(r.cvr);cltv.push(r.cltv)}const q=(a,p)=>{a=a.slice().sort((x,y)=>x-y);return a[Math.floor(p*(a.length-1))]};return{ltv:[q(ltv,.1),q(ltv,.5),q(ltv,.9)],rpv:[q(rpv,.1),q(rpv,.5),q(rpv,.9)],cvr:[q(cvr,.1),q(cvr,.5),q(cvr,.9)],cltv:[q(cltv,.1),q(cltv,.5),q(cltv,.9)],point:evaluate(i,price,f,{elast:1,cvr:1,ret:1,relast:1})}}
+
+let rows=[];
+function run(){const i=inputs();labels(i);if(!(i.price>0&&i.cvr>0))return;
+  const base=simulate(i,i.price,FRAMES[0]);rows=[];
+  i.prices.forEach(p=>{FRAMES.forEach(f=>{if(f.id!=='list'&&p!==i.price)return;const s=simulate(i,p,f);rows.push({name:f.id==='list'?`£${p} list price`:`£${p} ${f.name}`,price:p,frame:f,s,isBase:p===i.price&&f.id==='list'})})});
+  rows.forEach(r=>{r.dCvr=r.s.point.cvr/base.point.cvr-1;r.dLtv=r.s.ltv[1]/base.ltv[1]-1;r.dRpv=r.s.rpv[1]/base.rpv[1]-1;r.trap=r.dCvr>0.005&&r.dLtv<-0.005;r.pWorse=r.s.ltv[0]<base.ltv[1]});
+  const best=rows.slice().sort((a,b)=>b.s.ltv[1]-a.s.ltv[1])[0];const bestCvr=rows.slice().sort((a,b)=>b.s.point.cvr-a.s.point.cvr)[0];const traps=rows.filter(r=>r.trap);
+  $('headline').innerHTML=stat('Baseline LTV / visitor',fmtGBP(base.ltv[1]),`${fmtGBP(base.ltv[0])} to ${fmtGBP(base.ltv[2])}, ${i.horizon} months`)+stat('Best for LTV',best.name,`${fmtGBP(best.s.ltv[1])} (${sign(best.dLtv)} vs baseline)`)+stat('Best for CVR',bestCvr.name,`${fmtPct(bestCvr.s.point.cvr,2)} (${sign(bestCvr.dCvr)})`)+stat('CVR wins that lose LTV',traps.length,traps.length?traps.map(t=>t.name).join('; ').slice(0,60):'none at these assumptions');
+  const v=$('verdict');if(best.name===bestCvr.name){v.className='verdict good';v.textContent=`No tension at these assumptions: ${best.name} is best on both conversion and ${i.horizon}-month LTV. Test it, but pre-register retention as a guardrail, because the LTV claim rests on the retention lift holding.`}else{v.className='verdict bad';v.textContent=`Tension: ${bestCvr.name} wins conversion (${sign(bestCvr.dCvr)}) but ${best.name} wins ${i.horizon}-month LTV (${sign(best.dLtv)}). A 14-day test on CVR alone would pick the wrong one. The decision rule needs a retention or revenue-per-visitor guardrail, or a holdback group read at month ${Math.min(3,i.horizon)}.`}
+  renderTable(base,i);drawChart(base,i)}
+const sign=x=>(x>=0?'+':'')+(x*100).toFixed(1)+'%';
+function stat(k,v,d){return `<div class="stat"><span class="k">${k}</span><span class="v">${v}</span><span class="d">${d}</span></div>`}
+function renderTable(base,i){$('tbl').innerHTML=`<thead><tr><th>Scenario</th><th>CVR</th><th>Δ CVR</th><th>Retention</th><th>First-order RPV</th><th>LTV / customer</th><th>LTV / visitor (P10–P90)</th><th>Contribution LTV / visitor</th><th>Δ LTV</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr class="${r.isBase?'base':''}"><td>${r.name}</td><td class="num">${fmtPct(r.s.point.cvr,2)}</td><td class="num" style="color:${r.dCvr>0?'var(--good)':r.dCvr<0?'var(--bad)':'inherit'}">${r.isBase?'–':sign(r.dCvr)}</td><td class="num">${fmtPct(r.s.point.ret,0)}</td><td class="num">${fmtGBP(r.s.rpv[1])}</td><td class="num">${fmtGBP(r.s.point.ltvCust)}</td><td class="num">${fmtGBP(r.s.ltv[1])}<span class="rng">${fmtGBP(r.s.ltv[0])} – ${fmtGBP(r.s.ltv[2])}</span></td><td class="num">${fmtGBP(r.s.cltv[1])}</td><td class="num" style="color:${r.dLtv>0?'var(--good)':r.dLtv<0?'var(--bad)':'inherit'}">${r.isBase?'–':sign(r.dLtv)}</td><td>${r.isBase?'<span class="pill accent">baseline</span>':r.trap?'<span class="pill bad">CVR win, LTV loss</span>':r.dLtv>0&&r.pWorse?'<span class="pill warn">Likely better, not safe</span>':r.dLtv>0?'<span class="pill good">Better on LTV</span>':'<span class="pill">Worse</span>'}</td></tr>`).join('')}</tbody>`}
+function drawChart(base,i){const W=760,H=300,L=60,R=16,T=16,B=90;const n=rows.length;const maxV=Math.max(...rows.map(r=>r.s.ltv[2]),...rows.map(r=>r.s.rpv[2]))*1.08;const bw=(W-L-R)/n;const y=v=>T+(1-v/maxV)*(H-T-B);let s='';
+  for(let k=0;k<=4;k++){const v=maxV*k/4;s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">£${v.toFixed(2)}</text>`}
+  s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(base.ltv[1])}" y2="${y(base.ltv[1])}" style="stroke:var(--accent);stroke-dasharray:4 3"/><text x="${W-R}" y="${y(base.ltv[1])-4}" text-anchor="end">baseline LTV</text>`;
+  rows.forEach((r,k)=>{const x0=L+k*bw;const w=bw*0.32;const xl=x0+bw*0.15,xr=xl+w+4;
+    s+=`<rect class="rpvbar" x="${xl}" y="${y(r.s.rpv[1])}" width="${w}" height="${y(0)-y(r.s.rpv[1])}" rx="2"/>`;
+    s+=`<rect class="ltvbar" x="${xr}" y="${y(r.s.ltv[1])}" width="${w}" height="${y(0)-y(r.s.ltv[1])}" rx="2" style="${r.trap?'fill:var(--bad)':''}"/>`;
+    s+=`<line class="whisker" x1="${xr+w/2}" x2="${xr+w/2}" y1="${y(r.s.ltv[0])}" y2="${y(r.s.ltv[2])}"/><line class="whisker" x1="${xr+w/2-4}" x2="${xr+w/2+4}" y1="${y(r.s.ltv[0])}" y2="${y(r.s.ltv[0])}"/><line class="whisker" x1="${xr+w/2-4}" x2="${xr+w/2+4}" y1="${y(r.s.ltv[2])}" y2="${y(r.s.ltv[2])}"/>`;
+    const parts=r.name.replace(/^£(\d+) /,'£$1|').split('|');s+=`<text class="lbl" transform="translate(${x0+bw/2} ${H-B+14}) rotate(-35)" text-anchor="end">${parts[0]}${parts[1]?' '+parts[1].slice(0,22):''}</text>`});
+  $('chart').innerHTML=s}
+$('preset').onclick=()=>{$('price').value=49;$('cvr').value=3;$('cogs').value=18;$('horizon').value=6;$('ret').value=78;$('m1').value=10;$("elast").value=-8;$('relast').value=-3;$('unc').value=30;$('prices').value='39, 45, 49, 55, 59';run()};
+$('copy').onclick=()=>{const i=inputs();const t=`Pricing simulator, baseline £${i.price} at ${fmtPct(i.cvr,1)} CVR, retention ${fmtPct(i.ret,0)}, ${i.horizon} months\n\n| Scenario | CVR | ΔCVR | RPV | LTV/visitor P50 | P10–P90 | ΔLTV | Flag |\n|---|---|---|---|---|---|---|---|\n${rows.map(r=>`| ${r.name} | ${fmtPct(r.s.point.cvr,2)} | ${r.isBase?'–':sign(r.dCvr)} | ${fmtGBP(r.s.rpv[1])} | ${fmtGBP(r.s.ltv[1])} | ${fmtGBP(r.s.ltv[0])}–${fmtGBP(r.s.ltv[2])} | ${r.isBase?'–':sign(r.dLtv)} | ${r.trap?'CVR win, LTV loss':''} |`).join('\n')}\n\n${$('verdict').textContent}`;navigator.clipboard.writeText(t).then(()=>{$('copy').textContent='Copied';setTimeout(()=>$('copy').textContent='Copy results',1500)}).catch(()=>{})};
+document.querySelectorAll('aside input').forEach(el=>el.addEventListener('input',run));
+run();
+})();
+</script>
+</body>
+</html>
