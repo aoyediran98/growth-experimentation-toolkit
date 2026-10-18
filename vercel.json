@@ -8,7 +8,7 @@
   "rewrites": [
     {
       "source": "/ideation/s/:id",
-      "destination": "/ideation/index.html"
+      "destination": "/ideation/"
     }
   ]
 }
