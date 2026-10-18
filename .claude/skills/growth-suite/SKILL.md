@@ -7,7 +7,7 @@ description: Deploy, update and extend the Growth Suite (toolkit, Laws of UX aud
 
 Five static pages under `public/` sharing `api/ai.js`, `api/store.js`, `api/upload.js`, `api/blob.js` and a top nav injected into each page's `<body>`.
 
-Pages: `index.html` (toolkit, 10 tabs), `audit/`, `copy/`, `ideation/`, `pricing/`. Each page is self-contained: its own `<style>`, a runtime shim as its first script (routes `claude.use('sample'|'db'|'downloads'|'assets')` to `/api/*` outside claude.ai), then its app script.
+Pages: `index.html` (toolkit, 11 tabs), `audit/`, `copy/`, `ideation/`, `pricing/`, `match/` (message match), `funnel/` (funnel diagnostic), `localise/` (localisation scorecard). Each page is self-contained: its own `<style>`, a runtime shim as its first script (routes `claude.use('sample'|'db'|'downloads'|'assets')` to `/api/*` outside claude.ai), then its app script.
 
 ## Modes
 0. **Add-on already applied** — the four pages live in `public/`; `api/ai.js` and `api/store.js` are the toolkit's own, extended (image input on `/api/ai`; hash/set ops on `/api/store`, all keys under the toolkit's `gxt:` namespace). Never replace them with older copies: the toolkit depends on their model ids, streaming, JSON repair and 300s limit.
@@ -24,7 +24,7 @@ Prerequisites: `gh auth status`, `vercel whoami`, `ANTHROPIC_API_KEY`. If missin
 3. `vercel --yes`; `printf '%s' "$ANTHROPIC_API_KEY" | vercel env add ANTHROPIC_API_KEY production`.
 4. Redis (needed for ideation sessions, the toolkit roadmap/learnings/history and saved audit reports): Vercel dashboard → project → Storage → Create Database → Upstash for Redis → Connect. Optional Blob for larger ideation images. Wait for confirmation; `vercel env pull .env.local` to check.
 5. `vercel --prod --yes`; add the URL to README; commit; push.
-6. Smoke test each path: `/` (Load sample inputs → Synthesise; Read-out sample), `/audit/` (Load sample page → Audit → Save report), `/copy/` (Load example → Generate and check), `/ideation/` (Load sample session; pill must read "Storage: shared"), `/pricing/` (loads with the tension verdict).
+6. Smoke test each path: `/match/`, `/funnel/` and `/localise/` each have a Load example button; `/` (Load sample inputs → Synthesise; Read-out sample), `/audit/` (Load sample page → Audit → Save report), `/copy/` (Load example → Generate and check), `/ideation/` (Load sample session; pill must read "Storage: shared"), `/pricing/` (loads with the tension verdict).
 7. Report live URL, repo URL, and that the ideation facilitator link (`?f=`) must not be shared.
 
 ## Store namespaces

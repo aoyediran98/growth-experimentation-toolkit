@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Funnel Diagnostic</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: step table and segments on the left, the funnel drawn as a storyboard (screenshot above each step's bar) on the right; the biggest drop is the headline. */
+:root{--bg:#f6f5f2;--panel:#fff;--fg:#1c1f22;--muted:#5f6670;--line:#dcdad3;--soft:#eeece6;--accent:#0b6e70;--accent-fg:#fff;--accent-soft:#dff0ef;--good:#1f7a3a;--warn:#b46a00;--bad:#b3261e;--good-soft:#e2f2e6;--warn-soft:#fbeedb;--bad-soft:#f9e0de;--s2:#2d3e9a;--s3:#8a2a6f;--s4:#8a4a0e;--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;--s2:#9fb0ff;--s3:#f0a0dc;--s4:#f0b35a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;--s2:#9fb0ff;--s3:#f0a0dc;--s4:#f0b35a;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;padding-block:0 40px;padding-inline:16px;max-width:1280px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}h1{font-size:22px;font-weight:600}h2{font-size:17px;font-weight:600}
+h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p{margin:0}
+header{padding-block:18px 12px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline}
+header .sub{color:var(--muted);font-size:14px;max-width:74ch}
+.layout{display:grid;grid-template-columns:400px minmax(0,1fr);gap:18px;padding-top:18px}
+@media (max-width:980px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.field{display:flex;flex-direction:column;gap:3px}.field label{font-size:12px;font-weight:500;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+textarea{min-height:80px;resize:vertical;font-size:13px;font-family:var(--mono)}
+input[type=number]{font-family:var(--mono)}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:7px 12px}
+.btn:hover{background:var(--soft)}.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}.btn.small{padding:4px 9px;font-size:13px;font-weight:500}.btn:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.status{font-size:13px;color:var(--muted)}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.accent{background:var(--accent-soft);color:var(--accent)}
+.steps{display:flex;flex-direction:column;gap:6px}
+.step{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(var(--segs,1),minmax(64px,1fr)) 72px 28px;gap:6px;align-items:center}
+.step input{padding:5px 7px;font-size:13px}
+.step .img{display:flex;align-items:center;gap:4px}
+.step .img img{width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.step .img label{font-size:11px;cursor:pointer;color:var(--accent);white-space:nowrap}
+.hdr{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(var(--segs,1),minmax(64px,1fr)) 72px 28px;gap:6px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.hdr input{font-size:11px;padding:2px 6px;text-transform:none;letter-spacing:0}
+.right{display:flex;flex-direction:column;gap:14px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.stat .v{font-family:var(--mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}.stat .d{font-size:12px;color:var(--muted)}
+.board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(150px,1fr);gap:10px;overflow-x:auto;padding-bottom:6px}
+.stage{display:flex;flex-direction:column;gap:6px;min-width:0}
+.stage .shot{aspect-ratio:9/14;background:var(--soft);border:1px solid var(--line);border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
+.stage .shot img{width:100%;height:100%;object-fit:cover;object-position:top}
+.stage .name{font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stage .bar{height:10px;background:var(--soft);border-radius:5px;overflow:hidden}.stage .bar i{display:block;height:100%;background:var(--accent)}
+.stage .n{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums}
+.stage .drop{font-size:12px;color:var(--muted)}.stage.worst .drop{color:var(--bad);font-weight:600}
+.stage.worst .shot{border-color:var(--bad);box-shadow:0 0 0 2px var(--bad-soft)}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.chart .lbl{fill:var(--fg);font-family:var(--sans);font-size:12px}
+.chart .grid{stroke:var(--line);stroke-dasharray:2 3}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;vertical-align:-2px;margin-right:4px}
+.hyp{border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;border-left-width:4px;border-left-color:var(--accent)}
+.hyp .t{font-weight:600}.hyp .body{font-size:14px}.hyp .meta{display:flex;flex-wrap:wrap;gap:6px}
+.note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:6px;padding:8px 10px}
+.small{font-size:13px;color:var(--muted)}
+.hidden{display:none!important}
+.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13.5px}th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}td.num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.worst{color:var(--bad);font-weight:600}
+</style>
+</head>
+<body>
+<nav class="suite-nav" aria-label="Growth suite"><a href="/" class="suite-brand">Growth Suite</a><a href="/" data-p="/">Toolkit</a><a href="/audit/" data-p="/audit/">UX audit</a><a href="/copy/" data-p="/copy/">Regulated copy</a><a href="/ideation/" data-p="/ideation/">Ideation room</a><a href="/pricing/" data-p="/pricing/">Pricing simulator</a><a href="/match/" data-p="/match/">Message match</a><a href="/funnel/" data-p="/funnel/">Funnel diagnostic</a><a href="/localise/" data-p="/localise/">Localisation</a></nav>
+<style>.suite-nav{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:8px 0 4px;font-size:13px}.suite-nav a{color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:999px;border:1px solid transparent}.suite-nav a:hover{background:var(--soft)}.suite-nav a[aria-current=page]{background:var(--accent-soft);color:var(--accent);font-weight:600}.suite-nav .suite-brand{font-weight:700;color:var(--fg);margin-right:6px;padding-left:0}</style>
+<script>(function(){const p=location.pathname.replace(/index\.html$/,'');document.querySelectorAll('.suite-nav a[data-p]').forEach(a=>{if(a.dataset.p===p)a.setAttribute('aria-current','page')})})();</script>
+
+<header>
+  <div><h1>Funnel Diagnostic</h1><p class="sub">Enter the steps and the users at each, by segment if you have it, and drop a screenshot on each stage. The funnel is drawn as a storyboard, the biggest leak is found and valued, and the diagnosis turns each leak into hypotheses in the standard form, ready for the roadmap.</p></div>
+  <div class="actions"><span class="pill" id="aiPill">AI: checking</span><button class="btn small" id="sample">Load example</button></div>
+</header>
+
+<div class="layout">
+<aside class="panel">
+  <h3>Funnel</h3>
+  <div class="grid2"><div class="field"><label for="fName">Funnel</label><input id="fName" placeholder="e.g. Paid social → assessment"></div><div class="field"><label for="fPeriod">Period</label><input id="fPeriod" placeholder="e.g. Sept 2026"></div></div>
+  <div class="grid2"><div class="field"><label for="fValue">Value per final conversion</label><input id="fValue" type="number" step="1" value="120"></div><div class="field"><label for="fCur">Currency</label><select id="fCur"><option>£</option><option>€</option><option>$</option></select></div></div>
+  <div class="actions"><span class="small">Segments:</span><button class="btn small" id="segAdd">Add segment</button><button class="btn small" id="segDel">Remove last</button><label class="btn small" for="csv">Paste CSV</label><input id="csv" type="file" accept=".csv,.tsv,.txt" class="hidden"></div>
+  <div class="hdr" id="hdr"></div>
+  <div class="steps" id="steps"></div>
+  <div class="actions"><button class="btn small" id="stepAdd">Add step</button></div>
+  <div class="field"><label for="context">Context for the diagnosis (traffic source, audience, what changed recently)</label><textarea id="context" style="font-family:var(--sans)"></textarea></div>
+  <div class="actions"><button class="btn primary" id="run">Diagnose</button><button class="btn small" id="copy" disabled>Copy report</button><span class="status" id="status"></span></div>
+  <div class="note">Step conversion = users at this step ÷ users at the previous step. Value of a leak = the extra final conversions you would get by recovering 10% of the users lost at that step (they continue at the funnel's downstream rates), times value per conversion. Ranking by recoverable users, not by step rate, is what stops a small late step looking bigger than a huge early one. All computed in the page; the AI only interprets.</div>
+</aside>
+
+<div class="right">
+  <div class="panel"><h2>Storyboard</h2><div class="board" id="board"></div></div>
+  <div class="panel"><div class="stats" id="stats"></div></div>
+  <div class="panel"><div class="actions" style="justify-content:space-between"><h2>Step conversion by segment</h2><div class="legend" id="legend"></div></div><svg class="chart" id="chart" viewBox="0 0 760 260" role="img" aria-label="Step conversion by segment"></svg></div>
+  <div class="panel"><h2>Leaks, ranked by value</h2><div class="tablewrap"><table id="leaks"></table></div></div>
+  <div class="panel hidden" id="diagPanel"><h2>Diagnosis</h2><p id="diagSummary" class="small"></p><div id="hyps" style="display:flex;flex-direction:column;gap:8px"></div></div>
+</div>
+</div>
+
+<script>
+/* Runtime shim: outside claude.ai, AI goes to /api/ai */
+(function(){if(window.claude&&window.claude.use)return;
+  async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||r.statusText),{code:r.status===429?'rate_limited':'error'});return j}
+  const toDataUrl=b=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(b)});
+  const sample=async(input,opts={})=>{const images=opts.images?await Promise.all([...opts.images].map(toDataUrl)):[];const j=await post('/api/ai',{input,json:false,images});return{text:j.text,truncated:false}};
+  sample.json=async(input,opts={})=>{const images=opts.images?await Promise.all([...opts.images].map(toDataUrl)):[];const j=await post('/api/ai',{input,json:true,images});return j.value};
+  sample.limits=async()=>({maxPromptBytes:250000,images:{maxCount:6,maxInputBytes:4000000,mediaTypes:['image/jpeg','image/png','image/webp']}});
+  window.claude={use:async n=>n==='sample'?sample:null}})();
+</script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmtN=x=>Math.round(x).toLocaleString('en-GB');const pct=(x,d=1)=>isFinite(x)?(x*100).toFixed(d)+'%':'–';
+const SEGCOL=['var(--accent)','var(--s2)','var(--s3)','var(--s4)'];
+let segs=['All'];let steps=[{name:'',vals:[''],img:null}];let diag=null;
+
+/* ---------- Editor ---------- */
+function renderEditor(){document.documentElement.style.setProperty('--segs',segs.length);$('hdr').innerHTML=`<span>Step</span>${segs.map((s,i)=>`<input data-seg="${i}" value="${esc(s)}" title="Segment name">`).join('')}<span>Image</span><span></span>`;
+  $('steps').innerHTML=steps.map((st,i)=>`<div class="step" data-i="${i}"><input data-f="name" value="${esc(st.name)}" placeholder="Step ${i+1}">${segs.map((s,j)=>`<input data-v="${j}" type="number" min="0" value="${esc(st.vals[j]??'')}" placeholder="users">`).join('')}<div class="img">${st.img?`<img src="${st.img.url}" alt="">`:''}<label for="img${i}">${st.img?'swap':'+ image'}</label><input id="img${i}" type="file" accept="image/*" class="hidden" data-img="${i}"></div><button class="btn small" data-del="${i}" title="Remove">×</button></div>`).join('');renderAll()}
+$('hdr').addEventListener('input',e=>{const i=+e.target.dataset.seg;if(!isNaN(i)){segs[i]=e.target.value;renderAll()}});
+$('steps').addEventListener('input',e=>{const row=e.target.closest('[data-i]');if(!row)return;const i=+row.dataset.i;if(e.target.dataset.f==='name')steps[i].name=e.target.value;else if(e.target.dataset.v!==undefined)steps[i].vals[+e.target.dataset.v]=e.target.value;renderAll()});
+$('steps').addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d&&steps.length>2){steps.splice(+d.dataset.del,1);renderEditor()}});
+$('steps').addEventListener('change',async e=>{if(e.target.dataset.img===undefined)return;const f=e.target.files[0];if(!f)return;const i=+e.target.dataset.img;const blob=await shrink(f);steps[i].img={blob,url:URL.createObjectURL(blob),name:f.name};renderEditor()});
+$('stepAdd').onclick=()=>{steps.push({name:'',vals:segs.map(()=>''),img:null});renderEditor()};
+$('segAdd').onclick=()=>{if(segs.length>=4)return;segs.push('Segment '+(segs.length+1));steps.forEach(s=>s.vals.push(''));renderEditor()};
+$('segDel').onclick=()=>{if(segs.length<=1)return;segs.pop();steps.forEach(s=>s.vals.pop());renderEditor()};
+$('csv').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{const rows=t.split(/\r?\n/).filter(l=>l.trim()).map(l=>l.split(/[\t,;]/).map(x=>x.replace(/^"|"$/g,'').trim()));if(rows.length<2)return;const head=rows[0];segs=head.slice(1).map(h=>h||'All');if(!segs.length)segs=['All'];steps=rows.slice(1).map(r=>({name:r[0],vals:r.slice(1,1+segs.length).map(x=>x.replace(/[^\d.]/g,'')),img:null}));renderEditor()})};
+function shrink(file){return new Promise(res=>{const img=new Image();const r=new FileReader();r.onload=()=>{img.onload=()=>{const max=1200;const sc=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>res(b),'image/jpeg',0.85)};img.src=r.result};r.readAsDataURL(file)})}
+
+/* ---------- Maths ---------- */
+function model(){const S=steps.filter(s=>s.name||s.vals.some(v=>v!==''));const n=S.length;const value=+$('fValue').value||0;const out={segs:segs.map((name,j)=>{const users=S.map(s=>+s.vals[j]||0);const conv=users.map((u,i)=>i?(users[i-1]?u/users[i-1]:NaN):1);return{name,users,conv}}),steps:S.map(s=>s.name),value};
+  const tot=out.segs.length>1?{name:'Total',users:S.map((s,i)=>out.segs.reduce((a,g)=>a+g.users[i],0))}:out.segs[0];tot.conv=tot.users.map((u,i)=>i?(tot.users[i-1]?u/tot.users[i-1]:NaN):1);out.total=tot;
+  const final=tot.users[n-1]||0;const downstream=i=>{let p=1;for(let k=i+1;k<n;k++)p*=isFinite(tot.conv[k])?tot.conv[k]:0;return p};
+  out.leaks=[];for(let i=1;i<n;i++){const lost=tot.users[i-1]-tot.users[i];const extraFinal=lost*0.10*downstream(i);out.leaks.push({i,from:out.steps[i-1],to:out.steps[i],conv:tot.conv[i],lost,lostShare:tot.users[0]?lost/tot.users[0]:0,extraFinal,value:extraFinal*value,worstSeg:out.segs.length>1?out.segs.map(g=>({name:g.name,conv:g.conv[i]})).filter(x=>isFinite(x.conv)).sort((a,b)=>a.conv-b.conv)[0]:null})}
+  out.leaks.sort((a,b)=>b.value-a.value);out.final=final;out.overall=tot.users[0]?final/tot.users[0]:NaN;return out}
+
+/* ---------- Render ---------- */
+function renderAll(){const m=model();const n=m.steps.length;const cur=$('fCur').value;const worst=m.leaks[0];
+  $('board').innerHTML=m.steps.map((name,i)=>{const st=steps.filter(s=>s.name||s.vals.some(v=>v!==''))[i];const u=m.total.users[i];const w=m.total.users[0]?u/m.total.users[0]*100:0;const isWorst=worst&&worst.i===i;return `<div class="stage ${isWorst?'worst':''}"><div class="shot">${st&&st.img?`<img src="${st.img.url}" alt="${esc(name)}">`:'no image'}</div><div class="name" title="${esc(name)}">${i+1}. ${esc(name||'Step '+(i+1))}</div><div class="bar"><i style="width:${w}%"></i></div><div class="n">${fmtN(u)} · ${pct(w/100,0)} of top</div><div class="drop">${i?`step ${pct(m.total.conv[i])}${isWorst?' · biggest leak':''}`:'entry'}</div></div>`}).join('')||'<span class="small">Add steps to see the storyboard.</span>';
+  $('stats').innerHTML=n?`<div class="stat"><span class="k">Overall</span><span class="v">${pct(m.overall,2)}</span><span class="d">${fmtN(m.total.users[0])} → ${fmtN(m.final)}</span></div>${worst?`<div class="stat"><span class="k">Biggest leak</span><span class="v" style="color:var(--bad)">${pct(worst.conv)}</span><span class="d">${esc(worst.from)} → ${esc(worst.to)}</span></div><div class="stat"><span class="k">Lost there</span><span class="v">${fmtN(worst.lost)}</span><span class="d">${pct(worst.lostShare)} of everyone who entered</span></div><div class="stat"><span class="k">Recovering 10% of them is worth</span><span class="v">${cur}${fmtN(worst.value)}</span><span class="d">+${fmtN(worst.extraFinal)} final conversions per period</span></div>`:''}`:'';
+  drawChart(m);
+  $('leaks').innerHTML=m.leaks.length?`<thead><tr><th>#</th><th>Step</th><th>Step conv.</th><th>Lost</th><th>Share of entry</th><th>Recover 10% of lost</th>${m.segs.length>1?'<th>Weakest segment</th>':''}</tr></thead><tbody>${m.leaks.map((l,k)=>`<tr><td class="num">${k+1}</td><td>${esc(l.from)} → ${esc(l.to)}</td><td class="num ${k===0?'worst':''}">${pct(l.conv)}</td><td class="num">${fmtN(l.lost)}</td><td class="num">${pct(l.lostShare)}</td><td class="num">${cur}${fmtN(l.value)}</td>${m.segs.length>1?`<td>${l.worstSeg?esc(l.worstSeg.name)+' '+pct(l.worstSeg.conv):'–'}</td>`:''}</tr>`).join('')}</tbody>`:'';
+  if(diag)renderDiag()}
+function drawChart(m){const n=m.steps.length;if(n<2){$('chart').innerHTML='';$('legend').innerHTML='';return}const W=760,H=260,L=46,R=16,T=16,B=60;const gw=(W-L-R)/(n-1);const y=v=>T+(1-Math.min(1,v))*(H-T-B);let s='';[0,.25,.5,.75,1].forEach(v=>{s+=`<line class="grid" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${Math.round(v*100)}%</text>`});
+  const series=m.segs.length>1?m.segs.concat([m.total]):[m.total];series.forEach((g,si)=>{const col=g.name==='Total'?'var(--fg)':SEGCOL[si%SEGCOL.length];const bw=gw*0.7/series.length;for(let i=1;i<n;i++){const v=g.conv[i];if(!isFinite(v))continue;const x=L+(i-1)*gw+gw*0.15+si*bw;s+=`<rect x="${x}" y="${y(v)}" width="${bw-2}" height="${y(0)-y(v)}" rx="2" fill="${col}" opacity="${g.name==='Total'?.35:.9}"/>`}});
+  for(let i=1;i<n;i++){s+=`<text class="lbl" x="${L+(i-1)*gw+gw*0.5}" y="${H-B+16}" text-anchor="middle">${esc((m.steps[i]||'').slice(0,18))}</text><text x="${L+(i-1)*gw+gw*0.5}" y="${H-B+30}" text-anchor="middle">${pct(m.total.conv[i],0)}</text>`}
+  $('chart').innerHTML=s;$('legend').innerHTML=series.map((g,si)=>`<span><i style="background:${g.name==='Total'?'var(--fg)':SEGCOL[si%SEGCOL.length]};opacity:${g.name==='Total'?.35:1}"></i>${esc(g.name)}</span>`).join('')}
+['fValue','fCur'].forEach(id=>$(id).addEventListener('input',renderAll));
+
+/* ---------- AI diagnosis ---------- */
+let sampleFn=null,imgLimits=null;
+(async()=>{try{sampleFn=await window.claude?.use?.('sample')}catch(e){}if(sampleFn){$('aiPill').textContent='AI: ready';$('aiPill').className='pill good';try{imgLimits=(await sampleFn.limits()).images||null}catch(e){}}else{$('aiPill').textContent='AI: unavailable (maths only)';$('aiPill').className='pill warn'}})();
+$('run').onclick=async()=>{const m=model();if(m.steps.length<2){$('status').textContent='Add at least two steps with users.';return}if(!sampleFn){$('status').textContent='AI is unavailable in this view; the maths above still stands.';return}
+  const S=steps.filter(s=>s.name||s.vals.some(v=>v!==''));const imgs=S.map((s,i)=>s.img?{i,blob:s.img.blob}:null).filter(Boolean).slice(0,imgLimits?imgLimits.maxCount:0);
+  const prompt=`You are a CRO lead diagnosing a funnel. Funnel: ${$('fName').value||'unnamed'} (${$('fPeriod').value||'period not stated'}). Context: ${$('context').value||'none given'}.
+${imgs.length?`${imgs.length} screenshot(s) attached, in this order: ${imgs.map(x=>`image #${imgs.indexOf(x)+1} = step ${x.i+1} "${S[x.i].name}"`).join(', ')}. Use them to see what the visitor faced at each step; cite "step n screenshot".`:'No screenshots attached; reason from the numbers and context only and say so.'}
+Measured (authoritative; do not recompute): steps ${JSON.stringify(m.steps)}; users by segment ${JSON.stringify(m.segs.map(g=>({name:g.name,users:g.users,stepConv:g.conv.map(v=>isFinite(v)?+v.toFixed(4):null)})))}; total ${JSON.stringify({users:m.total.users,stepConv:m.total.conv.map(v=>isFinite(v)?+v.toFixed(4):null)})}; leaks ranked by the value of recovering 10% of the users lost at the step ${JSON.stringify(m.leaks.map(l=>({from:l.from,to:l.to,conv:+l.conv.toFixed(4),lost:l.lost,valueOfRecovering10pct:Math.round(l.value),weakestSegment:l.worstSeg})))}; value per final conversion ${$('fCur').value}${m.value}.
+Write: "summary" (3 sentences: where the funnel leaks most, why the numbers and screenshots suggest it does, and what the segment split tells you). Then 4-7 "hypotheses", ordered by expected value, mostly on the top two leaks, each: step (the transition, e.g. "Landing → Quiz start"), hypothesis in exactly this form "We believe that [change] for [segment] will [outcome] because [evidence]. We'll know this is true when [primary metric] moves by at least [MDE] with [guardrail metric] unchanged.", primaryMetric, guardrail, surface (short), ease 1-3 (3 = copy/styling), principle, "whatToLookAt" (what research or data would confirm the cause before building). Return ONLY JSON {"summary":"","hypotheses":[{"step":"","hypothesis":"","primaryMetric":"","guardrail":"","surface":"","ease":2,"principle":"","whatToLookAt":""}]}`;
+  $('status').textContent='Diagnosing…';$('run').disabled=true;try{diag=await sampleFn.json(prompt,{modelTier:'default',cache:false,...(imgs.length&&imgLimits?{images:imgs.map(x=>x.blob)}:{})});$('status').textContent='';$('copy').disabled=false;renderDiag()}catch(e){$('status').textContent='Diagnosis failed: '+(e.message||e.code||'unknown')}finally{$('run').disabled=false}};
+function renderDiag(){if(!diag)return;$('diagPanel').classList.remove('hidden');$('diagSummary').textContent=diag.summary||'';$('hyps').innerHTML=(diag.hypotheses||[]).map((h,i)=>`<div class="hyp"><div class="meta"><span class="pill accent">${i+1}</span><span class="pill">${esc(h.step)}</span><span class="pill">${esc(h.surface||'')}</span><span class="pill">ease ${esc(h.ease)}</span>${h.principle?`<span class="pill">${esc(h.principle)}</span>`:''}</div><div class="body">${esc(h.hypothesis)}</div><div class="small"><strong>Metric:</strong> ${esc(h.primaryMetric)} · <strong>Guardrail:</strong> ${esc(h.guardrail)}</div>${h.whatToLookAt?`<div class="small"><strong>Confirm first:</strong> ${esc(h.whatToLookAt)}</div>`:''}</div>`).join('')}
+$('copy').onclick=()=>{const m=model();const cur=$('fCur').value;const md=`# Funnel diagnostic: ${$('fName').value||'funnel'} (${$('fPeriod').value||''})\n\nOverall ${pct(m.overall,2)} (${fmtN(m.total.users[0])} → ${fmtN(m.final)}). Value per conversion ${cur}${m.value}.\n\n| # | Step | Step conv. | Lost | Recover 10% of lost |\n|---|---|---|---|---|\n${m.leaks.map((l,k)=>`| ${k+1} | ${l.from} → ${l.to} | ${pct(l.conv)} | ${fmtN(l.lost)} | ${cur}${fmtN(l.value)} |`).join('\n')}\n\n${diag?`## Diagnosis\n${diag.summary}\n\n${(diag.hypotheses||[]).map((h,i)=>`${i+1}. **${h.step}** — ${h.hypothesis} _(metric: ${h.primaryMetric}; guardrail: ${h.guardrail}; surface: ${h.surface}; ease ${h.ease})_`).join('\n')}`:''}`;navigator.clipboard.writeText(md).then(()=>{$('copy').textContent='Copied';setTimeout(()=>$('copy').textContent='Copy report',1500)}).catch(()=>{})};
+
+/* ---------- Sample ---------- */
+$('sample').onclick=()=>{$('fName').value='Paid social → assessment → account';$('fPeriod').value='September 2026';$('fValue').value=120;$('fCur').value='£';$('context').value='Meta ads to a mobile landing page. Ads lead with "clinician-led". Price appears on the page but not in the ad. Quiz is 14 questions; account creation asks for email, phone and postcode before showing the result.';
+  segs=['Mobile','Desktop'];steps=[{name:'Landing page',vals:['38400','9800'],img:null},{name:'Quiz start',vals:['2300','980'],img:null},{name:'Quiz complete',vals:['1240','690'],img:null},{name:'Account created',vals:['610','470'],img:null},{name:'Paid',vals:['410','360'],img:null}];renderEditor()};
+renderEditor();
+})();
+</script>
+</body>
+</html>

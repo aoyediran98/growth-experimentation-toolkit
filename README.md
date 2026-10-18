@@ -2,7 +2,7 @@
 
 One page that follows a test through its life: research → hypothesis → brief → build → run → read-out → learn.
 
-Tools: Synthesise (research to hypotheses), Page audit (pasted copy, uploaded HTML or screenshots of pages and ads), Fuse insights (synthesis + audit), Sample size and duration, Brief generator, Variants and persona pre-screen with a variant-page builder that edits an uploaded control HTML, Roadmap board (ten steps from idea capture to rollout, with each idea's brief, variants, built page and read-out saved to it), Peeking guard, Read-out with CSV import, Learnings library, History.
+Tools: Synthesise (research to hypotheses), Page audit (pasted copy, uploaded HTML or screenshots of pages and ads), Fuse insights (synthesis + audit), Sample size and duration, Brief generator, Variants and persona pre-screen with a variant-page builder that edits an uploaded control HTML, Message match, Funnel diagnostic and Localisation scorecard pages alongside the UX audit, Regulated copy, Ideation room and Pricing simulator, Roadmap board (ten steps from idea capture to rollout, with each idea's brief, variants, built page and read-out saved to it), Peeking guard, Read-out with CSV import, Learnings library, History.
 
 All statistics (sample size, power, two-proportion test with CI, SRM chi-square, Holm correction, annualised value at CI bounds, Monte Carlo peeking simulation) are computed in the browser in plain JavaScript. The model only writes narrative around numbers it is handed.
 
