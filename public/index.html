@@ -709,7 +709,7 @@ function renderRoadmap(){const items=store.cache.roadmap;$('kanban').innerHTML=S
 store.listeners.push(renderRoadmap);
 $('kanban').addEventListener('change',e=>{const id=e.target.dataset.move;if(!id)return;const items=store.cache.roadmap.map(i=>i.id===id?{...i,status:e.target.value}:i);save('roadmap',items)});
 $('kanban').addEventListener('click',e=>{const d=e.target.closest('[data-rm-del]'),o=e.target.closest('[data-rm-open]');if(d){const id=d.dataset.rmDel;if(id===currentIdeaId)setIdea(null);save('roadmap',store.cache.roadmap.filter(i=>i.id!==id));artSet(id,null);artSet(id+'-control',null)}if(o)openIdea(o.dataset.rmOpen)});
-$('rmClear').onclick=()=>{if($('rmClear').textContent==='Really clear?'){store.cache.roadmap.forEach(i=>{artSet(i.id,null);artSet(i.id+'-control',null)});setIdea(null);save('roadmap',[]);$('rmClear').textContent='Clear board'}else{$('rmClear').textContent='Really clear?';setTimeout(()=>$('rmClear').textContent='Clear board',3000)}};
+$('rmClear').onclick=()=>{if($('rmClear').dataset.armed){store.cache.roadmap.forEach(i=>{artSet(i.id,null);artSet(i.id+'-control',null)});setIdea(null);save('roadmap',[]);$('rmClear').textContent='Clear board';delete $('rmClear').dataset.armed}else{$('rmClear').dataset.armed='1';$('rmClear').textContent='Really clear?';setTimeout(()=>{$('rmClear').textContent='Clear board';delete $('rmClear').dataset.armed},3000)}};
 $('rmNewStage').innerHTML=stageOptions('capture');
 $('rmAddSave').onclick=()=>{const t=$('rmNewText').value.trim();if(!t){$('rmStatus').textContent='Write the idea first.';return}const isHyp=/^we believe/i.test(t);addToRoadmap({title:isHyp?'':t,hypothesis:isHyp?t:'',notes:$('rmNewNotes').value.trim()},$('rmNewStage').value);$('rmNewText').value='';$('rmNewNotes').value='';$('rmStatus').textContent=`Idea saved at "${stageLabel($('rmNewStage').value)}".`};
 $('rmNext').onclick=async()=>{const open=store.cache.roadmap.filter(i=>STAGE_KEYS.indexOf(stageOf(i))<STAGE_KEYS.indexOf('build'));if(!open.length){$('rmStatus').textContent='No ideas on the board that are still before the build step.';return}
@@ -811,7 +811,7 @@ function bank(kind,title,payload){const items=[{id:uid(),kind,title:String(title
 function renderHistory(){const q=($('hsSearch').value||'').toLowerCase();const items=store.cache.history.filter(h=>!q||(h.kind+' '+h.title+' '+h.at).toLowerCase().includes(q));$('hsTable').innerHTML=items.length?`<table class="data"><thead><tr><th>When</th><th>Kind</th><th>Title</th><th></th></tr></thead><tbody>${items.map(h=>`<tr><td class="mono">${esc(h.at.replace('T',' ').slice(0,16))}</td><td><span class="pill accent">${esc(h.kind)}</span></td><td>${esc(h.title)}</td><td class="actions"><button class="btn small" data-hs-open="${h.id}">Reopen</button><button class="btn small" data-hs-del="${h.id}">×</button></td></tr>`).join('')}</tbody></table>`:'<p class="small">Nothing banked yet. Runs from every tool land here automatically.</p>'}
 store.listeners.push(renderHistory);$('hsSearch').addEventListener('input',renderHistory);
 $('hsTable').addEventListener('click',e=>{const d=e.target.closest('[data-hs-del]'),o=e.target.closest('[data-hs-open]');if(d)save('history',store.cache.history.filter(h=>h.id!==d.dataset.hsDel));if(o){const h=store.cache.history.find(x=>x.id===o.dataset.hsOpen);if(h)reopen(h)}});
-$('hsClear').onclick=()=>{if($('hsClear').textContent==='Really clear?'){save('history',[]);$('hsClear').textContent='Clear history'}else{$('hsClear').textContent='Really clear?';setTimeout(()=>$('hsClear').textContent='Clear history',3000)}};
+$('hsClear').onclick=()=>{if($('hsClear').dataset.armed){save('history',[]);$('hsClear').textContent='Clear history';delete $('hsClear').dataset.armed}else{$('hsClear').dataset.armed='1';$('hsClear').textContent='Really clear?';setTimeout(()=>{$('hsClear').textContent='Clear history';delete $('hsClear').dataset.armed},3000)}};
 function reopen(h){const p=h.payload||{};setIdea(null);switch(h.kind){
   case 'synthesis':$('synthCompany').value=p.company||'';$('synthInput').value=p.inputs||'';synthResult=p.result;renderSynth();show('synth');break;
   case 'audit':$('auditUrl').value=p.url||'';$('auditAd').value=p.ad||'';$('auditCopy').value=p.copy||'';auditResult=p.result;renderAudit();show('audit');break;
@@ -834,5 +834,6 @@ function md(t){const lines=String(t||'').split('\n');let out='',inList=false,inT
 storeInit();aiInit();
 })();
 </script>
+<script src="/translate.js" defer></script>
 </body>
 </html>

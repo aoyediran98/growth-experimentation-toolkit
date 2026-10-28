@@ -189,5 +189,6 @@ function render(){const r=result;const cur=r.current||{};const curCard=$('curren
 $('copy').onclick=()=>{if(!result)return;const md=`# Copy variants: ${$('product').value} (${SECTORS[$('sector').value].name}, ${$('region').selectedOptions[0].textContent})\n\n| Variant | Headline | Subhead | CTA | Principle | Verdict | Rules | Rewrite | Needs adjacent |\n|---|---|---|---|---|---|---|---|---|\n${(result.variants||[]).map(v=>`| ${v.name} | ${v.headline} | ${v.subhead} | ${v.cta} | ${v.principle} | ${v.verdict} | ${(v.rules||[]).map(x=>x.id+': '+x.reason).join('; ')} | ${v.rewrite||''} | ${v.disclosure||''} |`).join('\n')}\n\n**Test first:** ${result.testFirst}. ${result.why}`;navigator.clipboard.writeText(md).then(()=>{$('copy').textContent='Copied';setTimeout(()=>$('copy').textContent='Copy as Markdown',1500)}).catch(()=>{})};
 })();
 </script>
+<script src="/translate.js" defer></script>
 </body>
 </html>

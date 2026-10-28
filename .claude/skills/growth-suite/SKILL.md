@@ -9,6 +9,8 @@ Five static pages under `public/` sharing `api/ai.js`, `api/store.js`, `api/uplo
 
 Pages: `index.html` (toolkit, 11 tabs), `audit/`, `copy/`, `ideation/`, `pricing/`, `match/` (message match), `funnel/` (funnel diagnostic), `localise/` (localisation scorecard). Each page is self-contained: its own `<style>`, a runtime shim as its first script (routes `claude.use('sample'|'db'|'downloads'|'assets')` to `/api/*` outside claude.ai), then its app script.
 
+Every page loads `/translate.js` just before `</body>`: it adds the language picker (en, es, nl, fr) and the "Translate text" panel to `.suite-nav`. A new page must include it too. Code must not compare on-screen text to English strings (the page may be translated); use data attributes instead.
+
 ## Modes
 0. **Add-on already applied** — the four pages live in `public/`; `api/ai.js` and `api/store.js` are the toolkit's own, extended (image input on `/api/ai`; hash/set ops on `/api/store`, all keys under the toolkit's `gxt:` namespace). Never replace them with older copies: the toolkit depends on their model ids, streaming, JSON repair and 300s limit.
 1. **Run directly** — apply the relevant page's method in conversation: toolkit Method A/B (search `METHOD_A`, `roRun`), audit `rules()`/`LAWS`, copy `COMMON`/`SECTORS`/`REGIONS`, ideation `CRIT`/`scoreOf`, pricing `evaluate()`. Never invent numbers; statistics come from the page's pure functions.

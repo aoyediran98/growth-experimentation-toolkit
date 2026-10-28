@@ -341,5 +341,6 @@ $('rCopy').onclick=()=>navigator.clipboard.writeText(roadmapMd()).then(()=>flash
 $('rCsv').onclick=()=>{const rm=S.roadmap;if(!rm)return;const rows=[['Month','Order','Surface','Hypothesis','Primary metric','Score','Votes']];rm.months.forEach(m=>m.tests.forEach((t,i)=>rows.push([m.label,i+1,t.surface,t.hypothesis,t.primaryMetric,(+t.score).toFixed(1),t.votes])));navigator.clipboard.writeText(rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n')).then(()=>flash($('rCsv'),'Copied',1200)).catch(()=>{})};
 })();
 </script>
+<script src="/translate.js" defer></script>
 </body>
 </html>
