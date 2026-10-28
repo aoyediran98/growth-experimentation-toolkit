@@ -7,7 +7,7 @@ description: Deploy, update and extend the Growth Suite (toolkit, Laws of UX aud
 
 Five static pages under `public/` sharing `api/ai.js`, `api/store.js`, `api/upload.js`, `api/blob.js` and a top nav injected into each page's `<body>`.
 
-Pages: `index.html` (toolkit, 11 tabs), `audit/`, `copy/`, `ideation/`, `pricing/`, `match/` (message match), `funnel/` (funnel diagnostic), `localise/` (localisation scorecard). Each page is self-contained: its own `<style>`, a runtime shim as its first script (routes `claude.use('sample'|'db'|'downloads'|'assets')` to `/api/*` outside claude.ai), then its app script.
+Pages: `index.html` (toolkit, 11 tabs), `audit/`, `copy/`, `ideation/`, `pricing/`, `match/` (message match), `funnel/` (funnel diagnostic), `localise/` (localisation scorecard), `qa/` (test QA: control vs variant scan, checklist; see the `test-qa` skill). Each page is self-contained: its own `<style>`, a runtime shim as its first script (routes `claude.use('sample'|'db'|'downloads'|'assets')` to `/api/*` outside claude.ai), then its app script.
 
 Every page loads `/translate.js` just before `</body>`: it adds the language picker (en, es, nl, fr) and the "Translate text" panel to `.suite-nav`. A new page must include it too. Code must not compare on-screen text to English strings (the page may be translated); use data attributes instead.
 

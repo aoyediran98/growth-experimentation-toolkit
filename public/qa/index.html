@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Test QA</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+html,body{margin:0}
+/* Layout: scope and uploads on the left; on the right a verdict strip, the agree/clash comparison by category, side-by-side previews, then the checklist. */
+:root{--bg:#f6f5f2;--panel:#fff;--fg:#1c1f22;--muted:#5f6670;--line:#dcdad3;--soft:#eeece6;--accent:#0b6e70;--accent-fg:#fff;--accent-soft:#dff0ef;--good:#1f7a3a;--warn:#b46a00;--bad:#b3261e;--good-soft:#e2f2e6;--warn-soft:#fbeedb;--bad-soft:#f9e0de;--sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#151719;--panel:#1e2124;--fg:#e8e6e1;--muted:#9aa1a9;--line:#33383d;--soft:#272b2f;--accent:#4fc1c0;--accent-fg:#0d1b1b;--accent-soft:#1d3536;--good:#6fcf8a;--warn:#f0b35a;--bad:#f28b82;--good-soft:#1c3324;--warn-soft:#3a2d14;--bad-soft:#3e1f1d;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;padding-block:0 40px;padding-inline:16px;max-width:1280px;margin:0 auto}
+h1,h2,h3{text-wrap:balance;margin:0}h1{font-size:22px;font-weight:600}h2{font-size:17px;font-weight:600}
+h3{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p{margin:0}
+header{padding-block:18px 12px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline}
+header .sub{color:var(--muted);font-size:14px;max-width:74ch}
+.layout{display:grid;grid-template-columns:340px minmax(0,1fr);gap:18px;padding-top:18px}
+@media (max-width:940px){.layout{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.field{display:flex;flex-direction:column;gap:3px}.field label{font-size:12px;font-weight:500;color:var(--muted)}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+textarea{min-height:70px;resize:vertical;font-size:13px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.btn{font:inherit;font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:6px;padding:7px 12px}
+.btn:hover{background:var(--soft)}.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}.btn.small{padding:4px 9px;font-size:13px;font-weight:500}.btn:disabled{opacity:.5;cursor:default}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.status{font-size:13px;color:var(--muted)}
+.pill{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;background:var(--soft);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}.pill.warn{background:var(--warn-soft);color:var(--warn)}.pill.bad{background:var(--bad-soft);color:var(--bad)}.pill.accent{background:var(--accent-soft);color:var(--accent)}
+.pages{display:flex;flex-direction:column;gap:8px}
+.pg{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.pg .row{display:flex;gap:6px;align-items:center}.pg .row input{flex:1}
+.pg textarea{min-height:60px;font-family:var(--mono);font-size:11.5px}
+.thumbs{display:flex;flex-wrap:wrap;gap:6px}.thumbs img{width:64px;height:64px;object-fit:cover;object-position:top;border-radius:6px;border:1px solid var(--line)}
+.preview .design{display:flex;gap:6px;flex-wrap:wrap}.preview .design img{width:100%;max-width:260px;border:1px solid var(--line);border-radius:8px}
+.right{display:flex;flex-direction:column;gap:14px;min-width:0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--soft);border-radius:6px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}.stat .k{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.stat .v{font-family:var(--mono);font-size:20px;font-weight:500}.stat .d{font-size:12px;color:var(--muted)}
+.tablewrap{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
+td.k{font-weight:600;white-space:nowrap}td.v{font-family:var(--mono);font-size:12px;word-break:break-word}
+tr.same td{color:var(--muted)}tr.changed td.v{background:var(--warn-soft)}tr.clash td.v{background:var(--bad-soft)}
+td .add{color:var(--good);font-weight:600}td .del{color:var(--bad);text-decoration:line-through}
+.cat{margin-top:6px}
+.previews{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.preview{display:flex;flex-direction:column;gap:4px;min-width:0}.preview iframe{width:100%;height:420px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.preview .cap{font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+.check{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:start;padding:6px 0;border-top:1px solid var(--line);font-size:13.5px}
+.check:first-of-type{border-top:0}
+.check .d{font-size:12px;color:var(--muted)}
+.check input[type=checkbox]{width:16px;height:16px;margin-top:3px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap}.tabs button{all:unset;cursor:pointer;padding:5px 10px;border-radius:999px;font-size:13px;border:1px solid var(--line)}.tabs button[aria-pressed=true]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.note{font-size:13px;color:var(--muted);background:var(--soft);border-radius:6px;padding:8px 10px}
+.small{font-size:13px;color:var(--muted)}
+.hidden{display:none!important}
+.ai{border-left:3px solid var(--accent);padding:8px 12px;font-size:14px}
+.ai ul{margin:4px 0;padding-left:18px}
+</style>
+</head>
+<body>
+<nav class="suite-nav" aria-label="Growth suite"><a href="/" class="suite-brand">Growth Suite</a><a href="/" data-p="/">Toolkit</a><a href="/audit/" data-p="/audit/">UX audit</a><a href="/copy/" data-p="/copy/">Regulated copy</a><a href="/ideation/" data-p="/ideation/">Ideation room</a><a href="/pricing/" data-p="/pricing/">Pricing simulator</a><a href="/match/" data-p="/match/">Message match</a><a href="/funnel/" data-p="/funnel/">Funnel diagnostic</a><a href="/localise/" data-p="/localise/">Localisation</a><a href="/qa/" data-p="/qa/">Test QA</a></nav>
+<style>.suite-nav{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:8px 0 4px;font-size:13px}.suite-nav a{color:var(--muted);text-decoration:none;padding:4px 10px;border-radius:999px;border:1px solid transparent}.suite-nav a:hover{background:var(--soft)}.suite-nav a[aria-current=page]{background:var(--accent-soft);color:var(--accent);font-weight:600}.suite-nav .suite-brand{font-weight:700;color:var(--fg);margin-right:6px;padding-left:0}</style>
+<script>(function(){const p=location.pathname.replace(/index\.html$/,'');document.querySelectorAll('.suite-nav a[data-p]').forEach(a=>{if(a.dataset.p===p)a.setAttribute('aria-current','page')})})();</script>
+
+<header>
+  <div><h1>Test QA</h1><p class="sub">Upload the control and the variant pages before a test goes live. The pages are scanned for tracking, events, content and visual design, every difference is listed as either expected for the test or a clash, and a QA checklist is filled from what the scan found, with the rest ticked by hand. Nothing leaves the page except the optional review.</p></div>
+  <div class="actions"><span class="pill" id="aiPill">AI: checking</span><button class="btn small" id="sample">Load example</button></div>
+</header>
+
+<div class="layout">
+<aside class="panel">
+  <h3>Test scope</h3>
+  <div class="field"><label for="testName">Test</label><input id="testName" placeholder="e.g. HERO-14 clinician-first hero"></div>
+  <div class="field"><label for="scope">What is supposed to change (so the scan can tell intended from accidental)</label><textarea id="scope" placeholder="e.g. H1 copy, subhead, primary CTA label and colour. Nothing else."></textarea></div>
+  <div class="field"><label for="metric">Primary metric event</label><input id="metric" placeholder="e.g. assessment_start"></div>
+  <div class="actions" id="deriveRow"><button class="btn small" id="derive" disabled>Derive scope from design images</button><span class="small">Upload the approved mockups below first.</span></div>
+  <h3>Pages</h3>
+  <div class="pages" id="pages"></div>
+  <div class="actions"><button class="btn small" id="addVar">Add variant</button></div>
+  <div class="actions"><button class="btn primary" id="run">Scan and compare</button><button class="btn small" id="review" disabled>Review with AI</button><button class="btn small" id="copy" disabled>Copy report</button><span class="status" id="status"></span></div>
+  <div class="note">Tracking checks look for GTM and GA4 ids, dataLayer pushes and their event names, gtag calls, experiment-tool scripts and variant markers, and the primary metric event. Visual checks compare fonts, colours, images and alt text, headings, CTAs and viewport meta. Manual items persist in this browser per test name.</div>
+</aside>
+
+<div class="right">
+  <div class="stats" id="stats"></div>
+  <div class="panel hidden" id="aiPanel"><h2>Review</h2><div class="ai" id="aiOut"></div></div>
+  <div class="panel"><div class="actions" style="justify-content:space-between"><h2>Agree or clash</h2><div class="tabs" id="filter"><button data-f="all" aria-pressed="true">All</button><button data-f="clash">Clashes</button><button data-f="changed">Changed</button><button data-f="same">Same</button></div></div><p class="small">Same = identical across pages. Changed = differs and matches the scope. Clash = differs and is not in the scope, or a tracking or quality problem on one page only.</p><div id="compare"></div></div>
+  <div class="panel"><h2>Side by side</h2><div class="previews" id="previews"></div></div>
+  <div class="panel"><h2>QA checklist</h2><p class="small">Auto items are set by the scan; tick the manual ones as you verify them in the testing tool and the browser.</p><div id="checklist"></div></div>
+</div>
+</div>
+
+<script>
+/* Runtime shim: outside claude.ai, AI goes to /api/ai */
+(function(){if(window.claude&&window.claude.use)return;
+  async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||r.statusText),{code:r.status===429?'rate_limited':'error'});return j}
+  const toDataUrl=b=>new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(b)});
+  const sample=async(input,opts={})=>{const images=opts.images?await Promise.all([...opts.images].map(toDataUrl)):[];const j=await post('/api/ai',{input,json:false,images});return{text:j.text,truncated:false}};
+  sample.json=async(input,opts={})=>{const images=opts.images?await Promise.all([...opts.images].map(toDataUrl)):[];const j=await post('/api/ai',{input,json:true,images});return j.value};
+  sample.limits=async()=>({maxPromptBytes:250000,images:{maxCount:6,maxInputBytes:4000000,mediaTypes:['image/jpeg','image/png','image/webp']}});
+  window.claude={use:async n=>n==='sample'?sample:null}})();
+</script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uniq=a=>[...new Set(a)];
+let pages=[{name:'Control',html:''},{name:'Variant A',html:''}];let scan=null,ai=null,filter='all';
+
+/* ---------- Page editor ---------- */
+function renderPages(){$('pages').innerHTML=pages.map((pg,i)=>`<div class="pg" data-i="${i}"><div class="row"><input data-f="name" value="${esc(pg.name)}"><label class="btn small" for="f${i}">Upload .html</label><input id="f${i}" type="file" accept=".html,.htm,.txt" class="hidden" data-file="${i}">${i>1?`<button class="btn small" data-del="${i}">×</button>`:''}</div><textarea data-f="html" placeholder="Paste the page HTML">${esc(pg.html)}</textarea><div class="row" data-imgrow="${i}"><label class="btn small" for="d${i}">Expected design images</label><input id="d${i}" type="file" accept="image/*" multiple class="hidden" data-design="${i}"><span class="small">${(pg.designs||[]).length?(pg.designs.length+' image'+(pg.designs.length===1?'':'s')):'mockups or approved screenshots'}</span></div><div class="thumbs">${(pg.designs||[]).map(d=>`<img src="${d.url}" alt="">`).join('')}</div></div>`).join('')}
+$('pages').addEventListener('input',e=>{const i=+e.target.closest('[data-i]').dataset.i;pages[i][e.target.dataset.f]=e.target.value});
+$('pages').addEventListener('change',async e=>{if(e.target.dataset.design!==undefined){const i=+e.target.dataset.design;const files=[...e.target.files].slice(0,3);const out=[];for(const f of files){const blob=await shrink(f);out.push({blob,url:URL.createObjectURL(blob),name:f.name})}pages[i].designs=out;renderPages();$('derive').disabled=!(sampleFn&&imgLimits&&pages.some(p=>(p.designs||[]).length));return}
+  if(e.target.dataset.file===undefined)return;const f=e.target.files[0];if(!f)return;const i=+e.target.dataset.file;f.text().then(t=>{pages[i].html=t;if(pages[i].name.startsWith('Variant')||pages[i].name==='Control')pages[i].name=pages[i].name;renderPages()})});
+$('pages').addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){pages.splice(+d.dataset.del,1);renderPages()}});
+function shrink(file){return new Promise(res=>{const img=new Image();const r=new FileReader();r.onload=()=>{img.onload=()=>{const max=1600;const sc=Math.min(1,max/Math.max(img.width,img.height));const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>res(b),'image/jpeg',0.85)};img.src=r.result};r.readAsDataURL(file)})}
+function designImages(){const list=[];pages.forEach((p,i)=>(p.designs||[]).forEach((d,k)=>list.push({page:p.name,i,k,blob:d.blob})));return list}
+$('addVar').onclick=()=>{if(pages.length>=4)return;pages.push({name:'Variant '+String.fromCharCode(64+pages.length),html:''});renderPages()};
+renderPages();
+
+/* ---------- Scanner ---------- */
+function scanPage(src){const d=new DOMParser().parseFromString(src,'text/html');const q=s=>[...d.querySelectorAll(s)];const txt=e=>(e.textContent||'').replace(/\s+/g,' ').trim();
+  const scripts=q('script');const inline=scripts.filter(s=>!s.src).map(s=>s.textContent).join('\n');const ext=scripts.filter(s=>s.src).map(s=>s.src);
+  const all=src;
+  const gtm=uniq(all.match(/GTM-[A-Z0-9]{4,}/g)||[]);const ga4=uniq(all.match(/G-[A-Z0-9]{6,}/g)||[]);const ua=uniq(all.match(/UA-\d{4,}-\d+/g)||[]);const pixel=uniq((all.match(/fbq\(\s*['"]init['"]\s*,\s*['"](\d+)['"]/g)||[]).map(x=>x.match(/\d+/)[0]));
+  const dlEvents=uniq((all.match(/dataLayer\.push\(\s*\{[^}]*?event\s*:\s*['"]([^'"]+)['"]/g)||[]).map(x=>x.match(/event\s*:\s*['"]([^'"]+)['"]/)[1]));const gtagEvents=uniq((all.match(/gtag\(\s*['"]event['"]\s*,\s*['"]([^'"]+)['"]/g)||[]).map(x=>x.match(/,\s*['"]([^'"]+)['"]/)[1]));
+  const onAttrs=q('[onclick],[onsubmit],[onchange]').map(e=>(e.getAttribute('onclick')||e.getAttribute('onsubmit')||e.getAttribute('onchange')).replace(/\s+/g,' ').slice(0,80));
+  const dataTrack=uniq(q('[data-track],[data-event],[data-analytics],[data-gtm],[data-testid],[data-cta]').flatMap(e=>[...e.attributes].filter(a=>/^data-(track|event|analytics|gtm|testid|cta)/.test(a.name)).map(a=>a.name+'='+a.value)));
+  const expTool=uniq(['optimizely','vwo','abtasty','convert.com','google_optimize','launchdarkly','statsig','growthbook','kameleoon','dynamic yield','adobe target'].filter(t=>all.toLowerCase().includes(t)));
+  const variantMarker=uniq((all.match(/data-(?:exp|experiment|variant|test)[a-z-]*="[^"]*"/gi)||[]).concat(all.match(/class="[^"]*(?:variant|exp-|test-)[^"]*"/gi)||[]));
+  const consent=/consent|cookieyes|onetrust|cookiebot|usercentrics|didomi/i.test(all);
+  const ctaSel='button,input[type=submit],input[type=button],a.btn,a[class*="btn"],a[class*="button"],[role=button]';
+  const ctas=q(ctaSel).map(b=>({text:b.value||txt(b),href:b.getAttribute('href')||'',id:b.id||'',cls:b.className||'',track:[...b.attributes].filter(a=>a.name.startsWith('data-')).map(a=>a.name+'='+a.value).join(' ')||(b.getAttribute('onclick')||'')}));
+  const headings=q('h1,h2,h3').map(h=>h.tagName.toLowerCase()+': '+txt(h));const h1=q('h1').length;
+  const links=q('a[href]').map(a=>a.getAttribute('href'));const broken=links.filter(h=>h==='#'||h===''||/^javascript:/.test(h));
+  const forms=q('form').map(f=>({action:f.getAttribute('action')||'',method:f.getAttribute('method')||'',fields:[...f.querySelectorAll('input:not([type=hidden]),select,textarea')].map(i=>i.name||i.id||i.type)}));
+  const imgs=q('img');const imgSrc=imgs.map(i=>i.getAttribute('src')||'');const noAlt=imgs.filter(i=>!i.hasAttribute('alt')).length;const emptySrc=imgs.filter(i=>!i.getAttribute('src')).length;
+  const styleText=q('style').map(s=>s.textContent).join('\n')+' '+q('[style]').map(e=>e.getAttribute('style')).join(';');
+  const colors=uniq((styleText.match(/#(?:[0-9a-f]{3}){1,2}\b|rgba?\([^)]*\)/gi)||[]).map(c=>c.toLowerCase()));const fonts=uniq((styleText.match(/font-family\s*:\s*([^;}]+)/gi)||[]).map(f=>f.replace(/font-family\s*:\s*/i,'').replace(/['"]/g,'').trim().toLowerCase()));
+  const fontLinks=ext.concat(q('link[href]').map(l=>l.href)).filter(u=>/fonts\.|typekit|\.woff/.test(u));
+  const ids=q('[id]').map(e=>e.id);const dupIds=uniq(ids.filter((x,i)=>ids.indexOf(x)!==i));
+  const title=txt(d.querySelector('title')||{textContent:''});const viewport=!!d.querySelector('meta[name=viewport]');const canonical=(d.querySelector('link[rel=canonical]')||{}).href||'';const robots=(d.querySelector('meta[name=robots]')||{}).content||'';const lang=d.documentElement.getAttribute('lang')||'';
+  const text=(()=>{d.querySelectorAll('script,style,noscript,template,svg').forEach(x=>x.remove());d.querySelectorAll('p,div,h1,h2,h3,h4,h5,h6,li,tr,br,section,article,header,footer,button,a').forEach(x=>x.append('\n'));return (d.body?d.body.textContent:'').replace(/[ \t]+/g,' ').replace(/\n{2,}/g,'\n').trim()})();
+  const prices=uniq(text.match(/(?:£|€|\$)\s?\d{1,4}(?:[.,]\d{2})?/g)||[]);
+  return{gtm,ga4,ua,pixel,dlEvents,gtagEvents,onAttrs,dataTrack,expTool,variantMarker,consent,extScripts:ext,ctas,headings,h1,links:uniq(links),broken,forms,imgSrc,imgCount:imgs.length,noAlt,emptySrc,colors,fonts,fontLinks,dupIds,title,viewport,canonical,robots,lang,text,words:text.split(/\s+/).length,prices,kb:Math.round(new Blob([src]).size/1024)}}
+
+/* ---------- Comparison ---------- */
+const CATS=[
+ {name:'Tracking',rows:[['GTM container','gtm'],['GA4 measurement id','ga4'],['Universal Analytics (legacy)','ua'],['Meta pixel','pixel'],['dataLayer events','dlEvents'],['gtag events','gtagEvents'],['Tracking attributes','dataTrack'],['Inline handlers','onAttrs'],['Experiment tool','expTool'],['Variant markers','variantMarker'],['Consent manager','consent'],['External scripts','extScripts']]},
+ {name:'Events and actions',rows:[['CTAs (text)','ctaText'],['CTA tracking','ctaTrack'],['CTA destinations','ctaHref'],['Forms and fields','formsStr'],['Links','links'],['Broken or empty links','broken']]},
+ {name:'Content',rows:[['Title','title'],['Headings','headings'],['Prices','prices'],['Word count','words'],['Language','lang'],['Canonical','canonical'],['Robots','robots']]},
+ {name:'Visual design',rows:[['Fonts','fonts'],['Font sources','fontLinks'],['Colours','colors'],['Images','imgSrc'],['Images without alt','noAlt'],['Images with empty src','emptySrc'],['Viewport meta','viewport'],['Duplicate ids','dupIds'],['H1 count','h1'],['HTML size KB','kb']]},
+];
+const TRACK_KEYS=new Set(['gtm','ga4','ua','pixel','dlEvents','gtagEvents','dataTrack','consent','extScripts','ctaTrack','viewport','noAlt','emptySrc','dupIds','broken','h1']);
+function val(s,k){switch(k){case 'ctaText':return s.ctas.map(c=>c.text);case 'ctaTrack':return s.ctas.map(c=>(c.text||'?')+' → '+(c.track||'none'));case 'ctaHref':return s.ctas.map(c=>(c.text||'?')+' → '+(c.href||'(button)'));case 'formsStr':return s.forms.map(f=>`${f.method||'get'} ${f.action||'(none)'} [${f.fields.join(', ')}]`);default:return s[k]}}
+const norm=v=>Array.isArray(v)?v.map(String):typeof v==='boolean'?[v?'yes':'no']:v==null||v===''?[]:[String(v)];
+function scopeMatches(label,scope){const sc=scope.toLowerCase();const words={'CTAs (text)':['cta','button','label','copy'],'CTA destinations':['cta','link','destination','url'],'Title':['title'],'Headings':['h1','h2','heading','headline','hero','copy'],'Prices':['price','pricing','offer'],'Word count':['copy','text','content'],'Fonts':['font','type'],'Colours':['colour','color','style','design'],'Images':['image','hero','photo','visual','design'],'Font sources':['font'],'Links':['link','nav']};return (words[label]||[]).some(w=>sc.includes(w))}
+function compare(){const scope=$('scope').value||'';const S=pages.map(p=>({name:p.name,s:scanPage(p.html||'')}));const ctrl=S[0];const rows=[];
+  CATS.forEach(cat=>cat.rows.forEach(([label,key])=>{const vals=S.map(x=>norm(val(x.s,key)));const same=vals.every(v=>JSON.stringify(v)===JSON.stringify(vals[0]));let status='same',why='';
+    if(!same&&key==='variantMarker'){status='changed';why='Expected: each page identifies its own variant.'}
+    else if(!same){const tracking=TRACK_KEYS.has(key);const missingInVariant=vals.slice(1).some((v,i)=>v.length<vals[0].length&&tracking);const intended=scopeMatches(label,scope);
+      if(tracking){status='clash';why=missingInVariant?'A variant has less of this than control.':'Tracking or quality differs between pages.'}else if(intended){status='changed';why='In scope.'}else{status='clash';why='Differs but not in the stated scope.'}}
+    // one-page quality problems even when the same
+    if(same&&['Images without alt','Images with empty src','Duplicate ids','Broken or empty links'].includes(label)&&vals[0].length&&vals[0][0]!=='0'&&vals[0][0]!==''){const n=+vals[0][0];if(!isNaN(n)?n>0:true){status='clash';why='Present on every page; fix before launch.'}}
+    if(same&&label==='Viewport meta'&&vals[0][0]==='no'){status='clash';why='No viewport meta on any page.'}
+    if(same&&label==='H1 count'&&vals[0][0]!=='1'){status='clash';why='Pages need exactly one H1.'}
+    rows.push({cat:cat.name,label,key,vals,status,why})}));
+  // primary metric event present?
+  const metric=($('metric').value||'').trim();const metricRow=metric?{cat:'Tracking',label:`Primary metric event "${metric}"`,key:'metric',vals:S.map(x=>[new RegExp('(^|[^A-Za-z0-9_])'+metric.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'([^A-Za-z0-9_]|$)').test(x.s.dlEvents.concat(x.s.gtagEvents,x.s.dataTrack,x.s.onAttrs).join(' '))?'found':'not found']),status:'same',why:''}:null;
+  if(metricRow){const miss=metricRow.vals.some(v=>v[0]==='not found');metricRow.status=miss?'clash':'same';metricRow.why=miss?'The primary metric event must fire on every page.':'';rows.splice(1,0,metricRow)}
+  // text diff
+  const diffs=S.slice(1).map(x=>({name:x.name,...diffWords(ctrl.s.text,x.s.text)}));
+  return{S,rows,diffs,scope}}
+function diffWords(a,b){const A=a.split(/\s+/).filter(Boolean),B=b.split(/\s+/).filter(Boolean);const n=A.length,m=B.length;if(n*m>3e6)return{added:['(too large to diff)'],removed:[]};const dp=Array.from({length:n+1},()=>new Uint16Array(m+1));for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)dp[i][j]=A[i]===B[j]?dp[i+1][j+1]+1:Math.max(dp[i+1][j],dp[i][j+1]);const added=[],removed=[];let i=0,j=0,buf=[],mode='';const flush=()=>{if(buf.length){(mode==='-'?removed:added).push(buf.join(' '));buf=[]}};while(i<n&&j<m){if(A[i]===B[j]){flush();mode='';i++;j++}else if(dp[i+1][j]>=dp[i][j+1]){if(mode!=='-'){flush();mode='-'}buf.push(A[i++])}else{if(mode!=='+'){flush();mode='+'}buf.push(B[j++])}}flush();if(i<n)removed.push(A.slice(i).join(' '));if(j<m)added.push(B.slice(j).join(' '));return{added,removed}}
+
+/* ---------- Checklist ---------- */
+const CHECKS=[
+ {cat:'Tracking',items:[
+  {id:'t1',t:'Same analytics container and measurement ids on control and every variant',auto:r=>['GTM container','GA4 measurement id'].every(l=>r.rows.find(x=>x.label===l).status!=='clash')},
+  {id:'t2',t:'Primary metric event fires on every page',auto:r=>{const x=r.rows.find(x=>x.key==='metric');return x?x.status==='same':null}},
+  {id:'t3',t:'Same dataLayer and gtag event names across pages (no renamed or missing events)',auto:r=>['dataLayer events','gtag events','Tracking attributes'].every(l=>r.rows.find(x=>x.label===l).status!=='clash')},
+  {id:'t4',t:'Experiment variant is identifiable in analytics (variant marker or experiment dimension present)',auto:r=>r.S.slice(1).every(x=>x.s.variantMarker.length||x.s.expTool.length)||null},
+  {id:'t5',t:'Consent manager present on every page (tags fire only after consent: verify by hand)',auto:r=>r.S.every(x=>x.s.consent)?true:(r.S.some(x=>x.s.consent)?false:null)},
+  {id:'t6',t:'Experiment assigned once per user and sticky across sessions (checked in the tool)',manual:true},
+  {id:'t7',t:'UTM and click ids preserved from ad to page to form (checked in a real click)',manual:true},
+  {id:'t8',t:'No flicker: variant applied before first paint, anti-flicker snippet or server-side',manual:true},
+  {id:'t9',t:'Sample ratio check plan: 50/50 split confirmed after 24 hours',manual:true},
+ ]},
+ {cat:'Events and actions',items:[
+  {id:'e1',t:'Every CTA on the variant has the same tracking as its control equivalent',auto:r=>r.rows.find(x=>x.label==='CTA tracking').status!=='clash'},
+  {id:'e2',t:'CTA destinations unchanged unless in scope',auto:r=>r.rows.find(x=>x.label==='CTA destinations').status!=='clash'},
+  {id:'e3',t:'Forms post to the same endpoint with the same field names',auto:r=>r.rows.find(x=>x.label==='Forms and fields').status!=='clash'},
+  {id:'e4',t:'No broken or placeholder links',auto:r=>r.rows.find(x=>x.label==='Broken or empty links').status!=='clash'},
+  {id:'e5',t:'Form validation, error states and success state verified on the variant',manual:true},
+  {id:'e6',t:'Goal recorded end to end once in the testing tool and once in analytics (no double counting)',manual:true},
+ ]},
+ {cat:'Visual design',items:[
+  {id:'v1',t:'Only the fonts in scope changed; font files load on the variant',auto:r=>['Fonts','Font sources'].every(l=>r.rows.find(x=>x.label===l).status!=='clash')},
+  {id:'v2',t:'Colour palette unchanged unless in scope',auto:r=>r.rows.find(x=>x.label==='Colours').status!=='clash'},
+  {id:'v3',t:'All images have a source and alt text',auto:r=>['Images without alt','Images with empty src'].every(l=>r.rows.find(x=>x.label===l).status!=='clash')},
+  {id:'v4',t:'Exactly one H1 and a viewport meta on every page',auto:r=>['H1 count','Viewport meta'].every(l=>r.rows.find(x=>x.label===l).status!=='clash')},
+  {id:'v5',t:'No duplicate element ids (breaks selectors and tracking)',auto:r=>r.rows.find(x=>x.label==='Duplicate ids').status!=='clash'},
+  {id:'v6',t:'Checked at 375px, 768px and 1280px: no overflow, CTA above the fold on mobile',manual:true},
+  {id:'v7',t:'Checked in Safari iOS, Chrome Android, Chrome and Safari desktop',manual:true},
+  {id:'v8',t:'Variant matches the approved design or prototype',manual:true},
+  {id:'v9',t:'Copy signed off by compliance/clinical where required',manual:true},
+ ]},
+];
+function storeKey(){return 'qa:'+($('testName').value||'untitled')}
+function loadManual(){try{return JSON.parse(localStorage.getItem(storeKey())||'{}')}catch(e){return{}}}
+function saveManual(m){try{localStorage.setItem(storeKey(),JSON.stringify(m))}catch(e){}}
+function renderChecklist(r){const man=loadManual();$('checklist').innerHTML=CHECKS.map(c=>`<h3 class="cat">${esc(c.cat)}</h3>${c.items.map(it=>{let st=null,auto=!it.manual;if(auto&&r){try{st=it.auto(r)}catch(e){st=null}}const checked=man[it.id];return `<div class="check"><input type="checkbox" data-id="${it.id}" ${auto?'disabled':''} ${auto?(st===true?'checked':''):(checked?'checked':'')}><div>${esc(it.t)}<div class="d">${auto?(r?(st===true?'Passed by scan':st===false?'Failed by scan: see the comparison':'Could not determine from HTML; verify by hand'):'Auto, after scan'):'Manual'}</div></div><span class="pill ${auto?(st===true?'good':st===false?'bad':''):(checked?'good':'')}">${auto?(st===true?'pass':st===false?'fail':'check'):(checked?'done':'todo')}</span></div>`}).join('')}`).join('')}
+$('checklist').addEventListener('change',e=>{if(!e.target.dataset.id||e.target.disabled)return;const m=loadManual();m[e.target.dataset.id]=e.target.checked;saveManual(m);renderChecklist(scan)});
+$('testName').addEventListener('change',()=>renderChecklist(scan));
+renderChecklist(null);
+
+/* ---------- Render ---------- */
+$('filter').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;filter=b.dataset.f;$('filter').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderCompare()});
+function renderCompare(){if(!scan)return;const r=scan;const cols=r.S.map(x=>x.name);let html='';CATS.forEach(cat=>{const rows=r.rows.filter(x=>x.cat===cat.name&&(filter==='all'||x.status===filter));if(!rows.length)return;html+=`<h3 class="cat">${esc(cat.name)}</h3><div class="tablewrap"><table><thead><tr><th style="width:170px">Check</th>${cols.map(c=>`<th>${esc(c)}</th>`).join('')}<th style="width:110px">Status</th></tr></thead><tbody>${rows.map(x=>`<tr class="${x.status}"><td class="k">${esc(x.label)}</td>${x.vals.map((v,i)=>`<td class="v">${cellDiff(x.vals[0],v,i)}</td>`).join('')}<td><span class="pill ${x.status==='same'?'good':x.status==='changed'?'warn':'bad'}">${x.status}</span>${x.why?`<div class="small">${esc(x.why)}</div>`:''}</td></tr>`).join('')}</tbody></table></div>`});
+  if(filter!=='same'&&r.diffs.some(d=>d.added.length||d.removed.length))html+=`<h3 class="cat">Copy changes</h3>`+r.diffs.map(d=>`<div class="small" style="margin-bottom:6px"><strong>${esc(d.name)}</strong> vs control: ${d.removed.map(x=>`<span class="del">${esc(x)}</span>`).join(' ')} ${d.added.map(x=>`<span class="add">${esc(x)}</span>`).join(' ')||'<em>no text changes</em>'}</div>`).join('');
+  $('compare').innerHTML=html||'<p class="small">Nothing in this filter.</p>'}
+function cellDiff(base,v,i){if(!v.length)return '<span class="small">–</span>';if(i===0)return esc(v.join(', '));const b=new Set(base);return v.map(x=>b.has(x)?esc(x):`<span class="add">${esc(x)}</span>`).concat(base.filter(x=>!v.includes(x)).map(x=>`<span class="del">${esc(x)}</span>`)).join(', ')}
+function renderAll(){const r=scan;const n={same:0,changed:0,clash:0};r.rows.forEach(x=>n[x.status]++);const verdict=n.clash?'Not ready':'Ready for manual checks';
+  $('stats').innerHTML=`<div class="stat"><span class="k">Verdict</span><span class="v"><span class="pill ${n.clash?'bad':'good'}">${verdict}</span></span><span class="d">${r.S.length} pages scanned</span></div><div class="stat"><span class="k">Clashes</span><span class="v" style="color:var(--bad)">${n.clash}</span><span class="d">fix or justify before launch</span></div><div class="stat"><span class="k">Changed in scope</span><span class="v" style="color:var(--warn)">${n.changed}</span><span class="d">expected differences</span></div><div class="stat"><span class="k">Same</span><span class="v" style="color:var(--good)">${n.same}</span><span class="d">identical across pages</span></div>`;
+  renderCompare();$('previews').innerHTML=r.S.map((x,i)=>`<div class="preview"><div class="cap"><strong>${esc(x.name)}</strong><span>${x.s.words} words · ${x.s.ctas.length} CTAs · ${x.s.kb} KB</span></div><iframe sandbox="" title="${esc(x.name)}"></iframe>${(pages[i].designs||[]).length?`<div class="cap"><span>Expected design</span></div><div class="design">${pages[i].designs.map(d=>`<img src="${d.url}" alt="Expected design for ${esc(x.name)}">`).join('')}</div>`:''}</div>`).join('');[...$('previews').querySelectorAll('iframe')].forEach((f,i)=>{f.srcdoc=pages[i].html||''});renderChecklist(r)}
+$('run').onclick=()=>{if(!pages[0].html.trim()||!pages[1].html.trim()){$('status').textContent='Add the control and at least one variant.';return}scan=compare();ai=null;$('aiPanel').classList.add('hidden');renderAll();$('status').textContent='';$('copy').disabled=false;$('review').disabled=!sampleFn};
+
+/* ---------- AI review ---------- */
+let sampleFn=null,imgLimits=null;(async()=>{try{sampleFn=await window.claude?.use?.('sample')}catch(e){}if(sampleFn){$('aiPill').textContent='AI: ready';$('aiPill').className='pill good';try{imgLimits=(await sampleFn.limits()).images||null}catch(e){}}else{$('aiPill').textContent='AI: unavailable (scan only)';$('aiPill').className='pill warn'}if(!imgLimits)$('deriveRow').classList.add('hidden')})();
+$('derive').onclick=async()=>{const imgs=designImages().slice(0,imgLimits?imgLimits.maxCount:0);if(!imgs.length||!sampleFn)return;$('status').textContent='Reading the designs…';$('derive').disabled=true;
+  try{const r=await sampleFn.json(`You are a QA lead. These are the approved design images for an A/B test, in order: ${imgs.map((x,n)=>`image #${n+1} = ${x.page}`).join(', ')}. Compare the variant images with the control image(s) and describe what is supposed to change, as a precise scope statement a scanner can use: list the elements (H1, subhead, CTA label, CTA colour, hero image, price, layout, section order, fonts, colours) and say which change and which must stay the same. If only variant images are given, infer the scope from what the design shows. Return ONLY JSON {"scope":"","expectedChanges":[""],"mustNotChange":[""]}`,{modelTier:'default',cache:false,images:imgs.map(x=>x.blob)});
+    $('scope').value=(r.scope||'')+(r.expectedChanges&&r.expectedChanges.length?' Expected: '+r.expectedChanges.join('; ')+'.':'')+(r.mustNotChange&&r.mustNotChange.length?' Must not change: '+r.mustNotChange.join('; ')+'.':'');$('status').textContent='Scope filled from the designs; edit it if needed, then scan.'}catch(e){$('status').textContent='Could not read designs: '+(e.message||e.code||'unknown')}finally{$('derive').disabled=false}};
+$('review').onclick=async()=>{if(!scan||!sampleFn)return;$('status').textContent='Reviewing…';$('review').disabled=true;
+  try{const r=scan;const imgs=designImages().slice(0,imgLimits?imgLimits.maxCount:0);const prompt=`You are a QA lead for A/B tests. Test: ${$('testName').value||'unnamed'}. Stated scope of change: ${r.scope||'not stated'}. Primary metric event: ${$('metric').value||'not stated'}.
+${imgs.length?`${imgs.length} approved design image(s) are attached, in order: ${imgs.map((x,n)=>`image #${n+1} = ${x.page}`).join(', ')}. Treat them as the source of truth for what each page should look like: a difference that matches the design for that page is intended; a difference that contradicts its design, or appears on a page whose design does not show it, is accidental. Also list "designMismatches": anything the scanned HTML has that the design for that page does not (missing elements, different copy, different CTA label, colours or fonts) as far as text and structure allow.`:'No design images attached; judge against the stated scope only.'}
+Scan results (authoritative): ${JSON.stringify({pages:r.S.map(x=>x.name),rows:r.rows.filter(x=>x.status!=='same').map(x=>({check:x.label,status:x.status,values:Object.fromEntries(r.S.map((p,i)=>[p.name,x.vals[i].slice(0,12)]))})),copyChanges:r.diffs})}
+Decide for each non-identical row whether the difference is intended by the scope, accidental, or a defect, and say why in one line. Then list "blockers" (must fix before launch), "warnings" (should fix or explicitly accept), and "accepted" (intended). Flag anything that would invalidate the test: tracking missing on one side, a changed event name, a CTA that goes somewhere else, a price difference not in scope, an extra script that changes load time. Finish with "launchReady": true|false and a one-sentence reason. Return ONLY JSON {"items":[{"check":"","classification":"intended|accidental|defect","why":""}],"blockers":[""],"warnings":[""],"accepted":[""],"designMismatches":[""],"launchReady":false,"reason":""}`;
+    ai=await sampleFn.json(prompt,{modelTier:'default',cache:false,...(imgs.length&&imgLimits?{images:imgs.map(x=>x.blob)}:{})});$('aiPanel').classList.remove('hidden');$('aiOut').innerHTML=`<p><strong>${ai.launchReady?'Launch ready':'Not launch ready'}:</strong> ${esc(ai.reason||'')}</p>${(ai.blockers||[]).length?`<p><strong>Blockers</strong></p><ul>${ai.blockers.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${(ai.warnings||[]).length?`<p><strong>Warnings</strong></p><ul>${ai.warnings.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${(ai.designMismatches||[]).length?`<p><strong>Does not match the design</strong></p><ul>${ai.designMismatches.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}${(ai.accepted||[]).length?`<p><strong>Accepted as intended</strong></p><ul>${ai.accepted.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}`;$('status').textContent=''}catch(e){$('status').textContent='Review failed: '+(e.message||e.code||'unknown')}finally{$('review').disabled=false}};
+
+/* ---------- Report ---------- */
+$('copy').onclick=()=>{if(!scan)return;const r=scan;const man=loadManual();const md=`# Test QA: ${$('testName').value||'test'}\n\nDesign images: ${designImages().length}\n\nScope: ${r.scope||'-'} · Metric event: ${$('metric').value||'-'} · Pages: ${r.S.map(x=>x.name).join(', ')}\n\n${ai?`**${ai.launchReady?'Launch ready':'Not launch ready'}:** ${ai.reason}\n\n${ai.blockers.length?'Blockers:\n'+ai.blockers.map(x=>'- '+x).join('\n')+'\n\n':''}`:''}## Clashes\n${r.rows.filter(x=>x.status==='clash').map(x=>`- **${x.label}**: ${r.S.map((p,i)=>`${p.name}: ${x.vals[i].join(', ')||'–'}`).join(' | ')} (${x.why})`).join('\n')||'- none'}\n\n## Changed in scope\n${r.rows.filter(x=>x.status==='changed').map(x=>`- **${x.label}**: ${r.S.map((p,i)=>`${p.name}: ${x.vals[i].join(', ')||'–'}`).join(' | ')}`).join('\n')||'- none'}\n\n## Checklist\n${CHECKS.map(c=>`### ${c.cat}\n${c.items.map(it=>{let st;if(it.manual)st=man[it.id]?'done':'todo';else{try{const v=it.auto(r);st=v===true?'pass':v===false?'FAIL':'check'}catch(e){st='check'}}return `- [${st==='pass'||st==='done'?'x':' '}] ${it.t} (${st})`}).join('\n')}`).join('\n\n')}`;navigator.clipboard.writeText(md).then(()=>{$('copy').textContent='Copied';setTimeout(()=>$('copy').textContent='Copy report',1500)}).catch(()=>{})};
+
+/* ---------- Example ---------- */
+$('sample').onclick=()=>{$('testName').value='HERO-14 clinician-first hero';$('scope').value='H1 and subhead copy, primary CTA label. Nothing else changes.';$('metric').value='assessment_start';
+  const ctrl=`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Medical weight loss | WeightCare</title><link rel="canonical" href="https://example-weightcare.com/start"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});})(window,document,'script','dataLayer','GTM-ABC1234');<\/script>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XYZ98765"><\/script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-XYZ98765');<\/script>
+<script src="https://cdn.cookieyes.com/client_data/abc/script.js"><\/script>
+<style>body{font-family:Inter,sans-serif;color:#1c1f22}.btn{background:#0b6e70;color:#fff;padding:12px 20px;border-radius:6px}.hero{background:#f6f5f2}</style></head>
+<body data-exp="HERO-14" data-variant="control">
+<header><nav><a href="/how">How it works</a><a href="/pricing">Pricing</a><a href="/reviews">Reviews</a></nav></header>
+<section class="hero"><img src="/img/hero.jpg" alt="Woman walking in a park"><h1>Take control of your weight</h1><p>Personalised medical weight loss, delivered to your door.</p><a class="btn" id="cta-primary" href="/assessment" data-track="cta_hero" onclick="dataLayer.push({event:'assessment_start',location:'hero'})">Start your free assessment</a></section>
+<section><h2>How it works</h2><p>Take the quiz. A clinician reviews your answers. If appropriate, treatment is delivered.</p><img src="/img/steps.png" alt="Three steps"></section>
+<section><h2>Plans</h2><p>From £149/month. Cancel anytime.</p><a class="btn" id="cta-plans" href="/pricing" data-track="cta_plans">View plans</a></section>
+<footer><a href="/privacy">Privacy</a><a href="/terms">Terms</a></footer></body></html>`;
+  const varA=ctrl.replace('data-variant="control"','data-variant="A"').replace('<h1>Take control of your weight</h1><p>Personalised medical weight loss, delivered to your door.</p>','<h1>Clinician-led weight care. No gimmicks.</h1><p>A real prescriber reviews your assessment, then builds a plan around your life.</p>').replace('>Start your free assessment<','>Start my assessment<')
+    .replace(`onclick="dataLayer.push({event:'assessment_start',location:'hero'})"`,`onclick="dataLayer.push({event:'assessment_started',location:'hero'})"`)   /* defect: renamed event */
+    .replace('<img src="/img/hero.jpg" alt="Woman walking in a park">','<img src="/img/hero-clinician.jpg">')   /* defect: alt missing, image changed */
+    .replace('From £149/month.','From £129/month.')   /* out of scope: price */
+    .replace('family=Inter:wght@400;600','family=Inter:wght@400;600&family=Fraunces:wght@600').replace('.hero{background:#f6f5f2}','.hero{background:#f6f5f2}h1{font-family:Fraunces,serif;color:#0b3d3e}')   /* out of scope: font and colour */
+    .replace('<script src="https://cdn.cookieyes.com/client_data/abc/script.js"><\/script>','');   /* defect: consent script removed */
+  pages=[{name:'Control',html:ctrl},{name:'Variant A',html:varA}];renderPages();$('status').textContent='Example loaded: the variant has four deliberate problems and two out-of-scope changes. Press Scan and compare.'};
+})();
+</script>
+
+<script src="/translate.js" defer></script>
+</body>
+</html>
