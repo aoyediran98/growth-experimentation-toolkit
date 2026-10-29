@@ -34,6 +34,8 @@ Never paste keys into chat, HTML or git; `api/review.js` refuses to build any pa
 - `api/r.js` serves reviews with `Content-Security-Policy: sandbox allow-scripts …` (no `allow-same-origin`), so scripts inside captured pages cannot act as this site. The template is built to run sandboxed.
 - `api/review.js`: `allowOverwrite: true` on re-share (required by current `@vercel/blob`), redirects are followed by hand and private, link-local and internal hosts are refused at every hop, and `/r/<id>` returns 404 when no Blob store is configured.
 
+- Provider `redis` (the default when the toolkit's Upstash database is connected) stores `gxt:review:<id>` = `{ v, data, sha256, sharedAt, title }`, where `data` is the gzipped, base64 `{ m, url }` manifest; `api/r.js` rebuilds the page with `compose()` on every open, so `vercel.json` gives `api/r.js` the template files too. Blob and here.now still work when configured.
+
 ## How the panel works
 
 1. Enter your publish token and pick where to publish (the pill confirms "owner verified").

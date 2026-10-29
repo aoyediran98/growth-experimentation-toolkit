@@ -20,7 +20,9 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
+import zlib from "zlib";
 import { put, list, del } from "@vercel/blob";
+import { Redis } from "@upstash/redis";
 
 export const config = { api: { bodyParser: { sizeLimit: "4mb" } } };
 
@@ -184,6 +186,44 @@ async function shareHereNow(m, incoming) {
 
 /* ---------- provider "vercel": your own Blob store, served from this deployment at /r/<id> ---------- */
 const hasBlob = () => !!process.env.BLOB_READ_WRITE_TOKEN;
+
+/* ---------- provider "redis": the toolkit's existing Upstash database, served from this deployment at /r/<id> ----------
+   Only what is unique to the review (control, variants, notes) is stored, gzipped; the page is rebuilt from the template
+   in lib/review-template whenever the link is opened, so each record stays far below the database's size limit. */
+function redisClient() {
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  return url && token ? new Redis({ url, token }) : null;
+}
+const hasRedis = () => !!redisClient();
+const reviewKey = (id) => "gxt:review:" + id;
+const pack = (v) => zlib.gzipSync(JSON.stringify(v)).toString("base64");
+const unpack = (s) => JSON.parse(zlib.gunzipSync(Buffer.from(s, "base64")).toString("utf8"));
+async function shareRedis(m, req, incoming) {
+  const r = redisClient();
+  if (!r) throw new Error("The toolkit database is not connected to this project");
+  const id = incoming && incoming.provider === "redis" && incoming.id ? incoming.id : `${m.slug}-${sha(m.id).slice(0, 8)}`;
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id)) throw new Error("Invalid review id");
+  const url = `${origin(req)}/r/${id}`;
+  const html = compose(m, url, "vercel");
+  const hash = sha(html);
+  const data = pack({ m, url });
+  if (data.length > 900000) throw new Error("This review is too large for the toolkit database; use a smaller control page or connect a Vercel Blob store");
+  const sharedAt = new Date().toISOString();
+  await r.set(reviewKey(id), { v: 1, data, sha256: hash, sharedAt, title: m.title });
+  const back = await r.get(reviewKey(id));
+  if (!back || back.data !== data) throw new Error("Stored review could not be read back; try again");
+  const receipt = { provider: "redis", id, sha256: hash, sharedAt, title: m.title };
+  return { status: "published", provider: "redis", access: "anyone_with_link", stakeholderUrl: url, strategistUrl: url + "?view=strategist", sha256: hash, size: Buffer.byteLength(html), stored: data.length, receipt };
+}
+async function readRedis(id) {
+  const r = redisClient();
+  if (!r) return null;
+  const rec = await r.get(reviewKey(id));
+  if (!rec || !rec.data) return null;
+  const { m, url } = unpack(rec.data);
+  return compose(m, url, "vercel");
+}
 function origin(req) {
   const proto = String(req.headers["x-forwarded-proto"] || "https").split(",")[0];
   const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").split(",")[0];
@@ -204,7 +244,9 @@ async function shareVercel(m, req, incoming) {
   return { status: "published", provider: "vercel", access: "anyone_with_link", stakeholderUrl: url, strategistUrl: url + "?view=strategist", blobUrl: blob.url, sha256: hash, size: Buffer.byteLength(html), receipt };
 }
 export async function readReview(id) {
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id || "") || !hasBlob()) return null;
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(id || "")) return null;
+  const fromDb = await readRedis(id);
+  if (fromDb || !hasBlob()) return fromDb;
   const { blobs } = await list({ prefix: `reviews/${id}.html`, limit: 1 });
   const b = blobs.find((x) => x.pathname === `reviews/${id}.html`);
   if (!b) return null;
@@ -258,6 +300,7 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   const { action } = req.body || {};
   const providers = [];
+  if (hasRedis()) providers.push("redis");
   if (hasBlob()) providers.push("vercel");
   let hn = true; try { key(); } catch { hn = false; }
   if (hn) providers.push("here.now");
@@ -271,10 +314,10 @@ export default async function handler(req, res) {
     if (action === "share") {
       const m = normalise(req.body.review);
       const want = req.body.provider || (req.body.receipt && req.body.receipt.provider) || providers[0];
-      if (!providers.includes(want)) throw new Error(want ? `Provider ${want} is not configured on this deployment` : "No publishing provider is configured: add a Vercel Blob store (BLOB_READ_WRITE_TOKEN) or your own here.now key");
-      return res.status(200).json(want === "vercel" ? await shareVercel(m, req, req.body.receipt) : await shareHereNow(m, req.body.receipt));
+      if (!providers.includes(want)) throw new Error(want ? `Provider ${want} is not configured on this deployment` : "No publishing provider is configured: connect the toolkit database (Upstash Redis), a Vercel Blob store or your own here.now key");
+      return res.status(200).json(want === "redis" ? await shareRedis(m, req, req.body.receipt) : want === "vercel" ? await shareVercel(m, req, req.body.receipt) : await shareHereNow(m, req.body.receipt));
     }
-    if (action === "unshare") { if (!hasBlob()) throw new Error("Only reviews on your Vercel Blob store can be removed here"); return res.status(200).json(await unshareVercel(String(req.body.id || ""))); }
+    if (action === "unshare") { const uid = String(req.body.id || ""); const r = redisClient(); if (r && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(uid) && (await r.del(reviewKey(uid)))) return res.status(200).json({ removed: true }); if (!hasBlob()) throw new Error("No review with that id is stored here"); return res.status(200).json(await unshareVercel(String(req.body.id || ""))); }
     return res.status(400).json({ error: "unknown action" });
   } catch (e) {
     return res.status(400).json({ error: e?.message || "review error" });

@@ -7,6 +7,9 @@
       "maxDuration": 60,
       "memory": 1024,
       "includeFiles": "lib/review-template/**"
+    },
+    "api/r.js": {
+      "includeFiles": "lib/review-template/**"
     }
   },
   "cleanUrls": true,
