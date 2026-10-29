@@ -1,0 +1,5 @@
+# Never upload local secrets with a deploy (runtime values come from the Vercel project settings)
+.env
+.env.*
+!.env.example
+*.bak

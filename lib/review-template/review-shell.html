@@ -1,0 +1,110 @@
+<title>CRO Review</title>
+
+<header class="top">
+  <span class="top__brand"><b>CRO</b><span>REVIEW</span></span>
+  <label class="vx-experiment-picker" for="vxExperiment">
+    <span id="vxExperimentLabel">EXPERIMENT</span>
+    <select id="vxExperiment" aria-label="Choose experiment"></select>
+  </label>
+  <div class="top__title">CRO Review<small id="topSub">Control vs. variant</small></div>
+
+  <div class="ctl">
+    <span class="ctl__lab">DECK</span>
+    <div class="seg seg--sm" id="segDeck" role="group" aria-label="Choose deck">
+      <button data-d="lp" aria-pressed="true">Page comparison</button>
+      <button data-d="journey" aria-pressed="false">Journey</button>
+    </div>
+  </div>
+
+  <div class="ctl" id="lpViewCtl">
+    <span class="ctl__lab">VIEW</span>
+    <div class="seg seg--sm" id="segMode" role="group" aria-label="Choose viewport">
+      <button data-m="mobile" aria-pressed="true">Mobile</button>
+      <button data-m="desktop" aria-pressed="false">Desktop</button>
+    </div>
+  </div>
+
+  <div class="zoom" role="group" aria-label="Zoom, shared by both panes">
+    <button id="zFit" aria-pressed="true" title="Fit both pages to their panes">Fit</button>
+    <button id="z100" aria-pressed="false" title="Actual size">100%</button>
+    <input type="range" id="zRange" min="12" max="200" step="1" value="100" aria-label="Zoom level">
+    <span class="zoom__val" id="zVal">100%</span>
+  </div>
+
+  <div class="legend">
+    <span class="legend__txt"><i class="i-imp"></i>Improved</span>
+    <span class="legend__txt"><i class="i-new"></i>New</span>
+    <div class="tog">
+      <button id="tNotes" aria-pressed="true">Annotations</button>
+      <button id="tSync" aria-pressed="false">Sync scroll</button>
+    </div>
+  </div>
+
+  <div class="jctl" id="jctl" hidden>
+    <button id="jnotesbtn" aria-pressed="false">CRO notes</button>
+  </div>
+</header>
+
+<div id="deck-journey" hidden>
+  <section class="j-map vx-journey-template" id="vxJourneyTemplate" aria-label="Journey flow map">
+    <div class="j-map__inner" id="vxJourneyMapInner">
+      <div class="j-rail j-rail--c" id="vxJourneyControlSteps">
+        <div class="j-rail__head">
+          <b id="vxJourneyControlLabel">CONTROL</b>
+          <span id="vxJourneyControlCount">0 steps</span>
+        </div>
+      </div>
+      <div class="j-rail j-rail--v" id="vxJourneySteps" role="tablist" aria-label="Choose journey step">
+        <div class="j-rail__head">
+          <b id="vxJourneyVariantLabel">VARIANT</b>
+          <span id="vxJourneyVariantCount">0 steps</span>
+        </div>
+      </div>
+      <svg class="j-map__svg" id="vxJourneyMapSvg" aria-hidden="true"></svg>
+    </div>
+  </section>
+</div>
+
+<div class="stage" id="deck-lp">
+  <section class="pane pane--control">
+    <div class="pane__head">
+      <span class="pane__tag">CONTROL</span>
+      <span class="pane__name" id="cName">Control<small id="cFile">Local self-contained HTML</small></span>
+    </div>
+    <div class="pane__body">
+      <div class="pane__scroll" id="scrollC">
+        <div class="phone" id="phoneC"></div>
+        <div class="dpage" id="deskC" hidden></div>
+      </div>
+      <div class="anno" data-side="left" id="annoC"><svg class="anno__svg"></svg></div>
+    </div>
+  </section>
+
+  <section class="pane pane--variant">
+    <div class="pane__head">
+      <span class="pane__tag" id="vTag">VARIANT</span>
+      <span class="pane__name" id="vName">Variant<small id="vFile">Local self-contained HTML</small></span>
+      <div class="seg seg--sm" id="seg" role="group" aria-label="Choose variant"></div>
+    </div>
+    <div class="pane__body">
+      <div class="pane__scroll" id="scrollV">
+        <div class="phone" id="phoneV"></div>
+        <div class="dpage" id="deskV" hidden></div>
+      </div>
+      <div class="anno" data-side="right" id="annoV"><svg class="anno__svg"></svg></div>
+    </div>
+  </section>
+
+  <aside class="rail">
+    <div class="rail__head">
+      <h2 id="railTitle">CRO NOTES · 0 CHANGES</h2>
+      <p>Select a note to reveal the matching change on the control and variant.</p>
+    </div>
+    <div class="rail__filters">
+      <button id="fAll" aria-pressed="true">All 0</button>
+      <button id="fImp" aria-pressed="false">Improved 0</button>
+      <button id="fNew" aria-pressed="false">New 0</button>
+    </div>
+    <div class="rail__list" id="railList"></div>
+  </aside>
+</div>

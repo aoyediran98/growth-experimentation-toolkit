@@ -2,6 +2,11 @@
   "functions": {
     "api/ai.js": {
       "maxDuration": 300
+    },
+    "api/review.js": {
+      "maxDuration": 60,
+      "memory": 1024,
+      "includeFiles": "lib/review-template/**"
     }
   },
   "cleanUrls": true,
@@ -9,6 +14,10 @@
     {
       "source": "/ideation/s/:id",
       "destination": "/ideation/"
+    },
+    {
+      "source": "/r/:id",
+      "destination": "/api/r?id=:id"
     }
   ]
 }
