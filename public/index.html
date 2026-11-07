@@ -301,7 +301,17 @@ code.diff{font-family:var(--mono);font-size:12px;white-space:pre-wrap;word-break
       <div class="field" style="flex:1 1 300px"><label for="rvTitle">Review title</label><input id="rvTitle" placeholder="Juniper · headline test"></div>
       <div class="field" style="flex:0 1 160px"><label for="rvViewport">Default viewport</label><select id="rvViewport"><option value="mobile">Mobile</option><option value="desktop">Desktop</option></select></div>
     </div>
-    <div id="rvVariantPick" class="small" style="margin:6px 0 10px">Generate variants above, then tick the ones to include. A variant you have built with "Build variant page" is used as the full page; the others get the headline, subhead and CTA swapped into the control.</div>
+    <div id="rvOwn" style="border-top:1px solid var(--line);margin-top:6px;padding-top:12px;display:flex;flex-direction:column;gap:12px">
+      <h3 style="margin:0">Make your own prototype</h3>
+      <p class="small" style="margin:0">Describe what you want and Claude builds it on the control loaded above, with a note on each change. You don't need generated variants. Each prototype is added to the list below, ready to preview and share.</p>
+      <div class="row">
+        <div class="field"><label for="rvGoal">Goal</label><input id="rvGoal" placeholder="e.g. More first-time visitors start the assessment"></div>
+        <div class="field"><label for="rvSuccess">What success looks like</label><input id="rvSuccess" placeholder="e.g. Assessment start rate up 10%, refund rate unchanged"></div>
+      </div>
+      <div class="field"><label for="rvChange">Change to make</label><textarea id="rvChange" style="min-height:90px" placeholder="e.g. Replace the hero with a two-question eligibility check, move the price under the button and add a trust bar with the CQC and GMC badges"></textarea></div>
+      <div class="row"><div class="field" style="flex:0 1 260px"><label for="rvProtoMode">How to build it</label><select id="rvProtoMode"><option value="edits">Targeted changes to the page</option><option value="rewrite">Full page redesign</option></select></div><div class="actions" style="align-self:flex-end"><button class="btn primary" id="rvProtoRun">Build prototype</button><span class="status" id="rvProtoStatus"></span></div></div>
+    </div>
+    <div id="rvVariantPick" class="small" style="margin:6px 0 10px">Generate variants above or build your own prototype, then tick the ones to include. A variant you have built with "Build variant page" is used as the full page; the others get the headline, subhead and CTA swapped into the control.</div>
     <div class="actions"><button class="btn" id="rvPreview" disabled>Preview review</button><button class="btn primary" id="rvShare" disabled>Share review link</button><button class="btn small" id="rvNew">Start a new review</button><span class="status" id="rvStatus"></span></div>
     <div id="rvLinks" class="hidden" style="margin-top:10px"></div>
     <div id="rvList" style="margin-top:12px"></div>
@@ -722,7 +732,7 @@ $('buildDownload').onclick=()=>{if(!build||!build.variantHtml)return;const a=doc
 $('buildCopyHtml').onclick=()=>copy(build&&build.variantHtml);
 
 /* ---------- 5b Prototype + stakeholder review (CRO Review System bridge) ---------- */
-const rv={control:null,title:'',id:null,links:null,receipt:null,shared:[]};
+const rv={control:null,title:'',id:null,links:null,receipt:null,shared:[],protos:[],controlTagged:null}; // protos: your own prototypes; controlTagged: the control with their anchors
 const rvPost=async(body)=>{const r=await fetch('/api/review',{method:'POST',headers:{'content-type':'application/json','x-review-token':$('rvToken').value.trim()},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||r.statusText);return j};
 const RV_EXAMPLE=`<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Juniper · Weight management</title>
@@ -735,28 +745,32 @@ const RV_EXAMPLE=`<!DOCTYPE html>
 <section><h2>How it works</h2><div class="steps"><div class="step">1. Answer a few questions about your health.</div><div class="step">2. A clinician reviews your answers within 24 hours.</div><div class="step">3. Treatment and coaching arrive at your door.</div></div></section>
 <div class="price"><b>£199 / month</b><br><span>Medication, clinician check-ins and the Juniper app. No joining fee.</span></div>
 </main></body></html>`;
-function rvSetControl(html,label){rv.control={html,label};const d=new DOMParser().parseFromString(html,'text/html');const a=rvDetect(d);if(!$('rvAHead').value)$('rvAHead').value=a.headline||'';if(!$('rvASub').value)$('rvASub').value=a.subhead||'';if(!$('rvACta').value)$('rvACta').value=a.cta||'';
+function rvSetControl(html,label){rv.control={html,label};rv.protos=[];rv.controlTagged=html;const d=new DOMParser().parseFromString(html,'text/html');const a=rvDetect(d);if(!$('rvAHead').value)$('rvAHead').value=a.headline||'';if(!$('rvASub').value)$('rvASub').value=a.subhead||'';if(!$('rvACta').value)$('rvACta').value=a.cta||'';
   const title=(d.querySelector('title')||{}).textContent||label;if(!$('rvTitle').value)$('rvTitle').value=(title||'Review').trim().slice(0,80);
   $('rvControlInfo').innerHTML=`<span class="pill good">Control loaded</span> ${esc(label)} · ${Math.round(html.length/1024)} KB · anchors: ${['headline','subhead','cta'].map(k=>a[k]?`<span class="pill">${k}</span>`:`<span class="pill warn">${k} not found</span>`).join(' ')}`;rvRefresh()}
 function rvDetect(d){const t=e=>(e?e.textContent:'').replace(/\s+/g,' ').trim();const h1=d.querySelector('[data-a="headline"]')||d.querySelector('h1');let sub=d.querySelector('[data-a="subhead"]');if(!sub&&h1){let n=h1.nextElementSibling;while(n&&!/^(P|H2|H3|DIV|SPAN)$/.test(n.tagName))n=n.nextElementSibling;if(n&&t(n).length<220)sub=n}
   let cta=d.querySelector('[data-a="cta"]')||[...d.querySelectorAll('a,button')].find(e=>/btn|cta|button|primary/i.test(e.className||'')&&t(e).length>1&&t(e).length<40)||[...d.querySelectorAll('a,button')].find(e=>t(e).length>1&&t(e).length<40&&h1&&(e.compareDocumentPosition(h1)&Node.DOCUMENT_POSITION_PRECEDING));
   return{headline:t(h1),subhead:t(sub),cta:t(cta)}}
 function rvFindByText(d,text,tags){const want=text.replace(/\s+/g,' ').trim().toLowerCase();if(!want)return null;const els=[...d.querySelectorAll(tags)];return els.find(e=>e.textContent.replace(/\s+/g,' ').trim().toLowerCase()===want)||els.find(e=>e.children.length===0&&e.textContent.replace(/\s+/g,' ').trim().toLowerCase().includes(want))||null}
-function rvAnchorDoc(html,texts){const t=texts||{headline:$('rvAHead').value,subhead:$('rvASub').value,cta:$('rvACta').value};const d=new DOMParser().parseFromString(html,'text/html');const map={headline:[t.headline,'h1,h2,[data-a="headline"]'],subhead:[t.subhead,'p,h2,h3,div,span,[data-a="subhead"]'],cta:[t.cta,'a,button,[data-a="cta"]']};const found={};
-  for(const [k,[txt,tags]] of Object.entries(map)){let el=d.querySelector(`[data-a="${k}"]`)||rvFindByText(d,txt,tags);if(el){el.setAttribute('data-a',k);found[k]=el}}return{d,found}}
+function rvAnchorDoc(html,texts){const t=texts||{headline:$('rvAHead').value,subhead:$('rvASub').value,cta:$('rvACta').value};const d=new DOMParser().parseFromString(html,'text/html');const map={headline:[t.headline,'h1,h2,[data-a="headline"]'],subhead:[t.subhead,'p,h2,h3,div,span,[data-a="subhead"]'],cta:[t.cta,'a,button,[data-a="cta"]']};const found={},alias={};
+  for(const [k,[txt,tags]] of Object.entries(map)){let el=d.querySelector(`[data-a="${k}"]`)||rvFindByText(d,txt,tags);if(el){const had=el.getAttribute('data-a');if(had&&had!==k&&/^p\d+c\d+$/.test(had))alias[k]=had;else el.setAttribute('data-a',k);found[k]=el}}return{d,found,alias}}
 function rvSerialise(d){return '<!DOCTYPE html>\n'+d.documentElement.outerHTML}
 function rvSetText(el,txt){if(!el||!txt)return;if(el.children.length&&el.querySelector('span,b,strong')){/* keep wrappers: replace text nodes only */const kids=[...el.childNodes].filter(n=>n.nodeType===3&&n.textContent.trim());if(kids.length){kids[0].textContent=txt;kids.slice(1).forEach(n=>n.textContent='');return}}el.textContent=txt}
-function rvBuildPages(selected){const base=rvAnchorDoc(rv.control.html);const anchors=Object.fromEntries(Object.keys(base.found).map(k=>[k,`[data-a="${k}"]`]));const controlHtml=rvSerialise(base.d);
-  const vs=selected.map(v=>{const built=rvBuilt(v);const {d,found}=built?rvAnchorDoc(built,{headline:v.headline,subhead:v.subhead,cta:v.cta}):rvAnchorDoc(rv.control.html);if(!built){rvSetText(found.headline,v.headline);rvSetText(found.subhead,v.subhead);rvSetText(found.cta,v.cta)}const notes=[];const cur={headline:$('rvAHead').value,subhead:$('rvASub').value,cta:$('rvACta').value};
-    for(const k of ['headline','subhead','cta'])if(found[k]&&base.found[k]&&v[k]&&v[k].trim()!==cur[k].trim())notes.push({kind:'imp',title:v.noteTitles?.[k]||({headline:'Make the headline say what the visitor gets',subhead:'Explain the promise in one line',cta:'Make the next step feel smaller'})[k],body:v.noteBodies?.[k]||(String(v.rationale||'').split(/(?<=\.)\s/)[0]||'Copy change from the hypothesis.').slice(0,160)+' We expect more visitors to take the next step.',before:cur[k],after:v[k],control:`[data-a="${k}"]`,variant:`[data-a="${k}"]`});
+function rvBuildPages(selected){const base=rvAnchorDoc(rv.controlTagged||rv.control.html);const sel=k=>`[data-a="${base.alias[k]||k}"]`;const anchors=Object.fromEntries(Object.keys(base.found).map(k=>[k,sel(k)]));const controlHtml=rvSerialise(base.d);
+  const vs=selected.map(v=>{if(v.isProto)return{key:v.key,name:v.label,html:v.html,anchors:{},notes:v.notes};const built=rvBuilt(v);const {d,found}=built?rvAnchorDoc(built,{headline:v.headline,subhead:v.subhead,cta:v.cta}):rvAnchorDoc(rv.control.html);if(!built){rvSetText(found.headline,v.headline);rvSetText(found.subhead,v.subhead);rvSetText(found.cta,v.cta)}const notes=[];const cur={headline:$('rvAHead').value,subhead:$('rvASub').value,cta:$('rvACta').value};
+    for(const k of ['headline','subhead','cta'])if(found[k]&&base.found[k]&&v[k]&&v[k].trim()!==cur[k].trim())notes.push({kind:'imp',title:v.noteTitles?.[k]||({headline:'Make the headline say what the visitor gets',subhead:'Explain the promise in one line',cta:'Make the next step feel smaller'})[k],body:v.noteBodies?.[k]||(String(v.rationale||'').split(/(?<=\.)\s/)[0]||'Copy change from the hypothesis.').slice(0,160)+' We expect more visitors to take the next step.',before:cur[k],after:v[k],control:sel(k),variant:`[data-a="${k}"]`});
     return{key:String(v.name||'v').toLowerCase(),name:'Variant '+v.name,html:rvSerialise(d),anchors,notes}});
   return{controlHtml,anchors,vs}}
 /* A variant built with "Build variant page" (copy, element, new-element or redesign changes) is used whole */
 function rvBuilt(v){return build&&build.variantHtml&&build.copyVariant===v.name?build.variantHtml:null}
-function rvSelected(){return [...document.querySelectorAll('#rvVariantPick input:checked')].map(i=>variants.variants[+i.value])}
-function rvRefresh(){const v=variants&&variants.variants||[];$('rvVariantPick').innerHTML=v.length?v.map((x,i)=>`<label class="pill" style="cursor:pointer;margin:0 6px 6px 0"><input type="checkbox" value="${i}" ${i===0||variants.runFirst===x.name?'checked':''}> ${esc(x.name)}: ${esc(x.title||x.headline)}${rvBuilt(x)?' <span class="pill good">built page</span>':''}</label>`).join('')+(rv.control&&v.some(rvBuilt)&&build.html&&rv.control.html!==build.html?'<p class="note" style="margin-top:6px">The built page was made from a different control than the one loaded here. Press "Use the builder\'s control" so control and variant match.</p>':''):'Generate variants above, then tick the ones to include.';
-  const ready=!!rv.control&&v.length>0;$('rvPreview').disabled=!ready;$('rvShare').disabled=!ready}
-async function rvNotesWithAI(selected,hyp){if(!sampleFn)return;try{const r=await sampleFn.json(`Write stakeholder review notes for an A/B test. Hypothesis: ${hyp}. Current copy: headline "${$('rvAHead').value}", subhead "${$('rvASub').value}", CTA "${$('rvACta').value}". For each variant and each changed field (headline, subhead, cta), write a title (plain-language action, max 8 words, e.g. "Make the main action easier to find", no CRO jargon) and a body (max 35 words, two sentences: what changed and why, then the expected outcome labelled as an expectation). Variants: ${JSON.stringify(selected.map(v=>({name:v.name,headline:v.headline,subhead:v.subhead,cta:v.cta,rationale:v.rationale})))}. Return ONLY JSON {"variants":[{"name":"A","notes":{"headline":{"title":"","body":""},"subhead":{"title":"","body":""},"cta":{"title":"","body":""}}}]}`,{modelTier:'default',cache:false});
+function rvSelected(){return [...document.querySelectorAll('#rvVariantPick input:checked')].map(i=>{const [t,n]=i.value.split(':');return t==='p'?rv.protos[+n]:(variants&&variants.variants||[])[+n]}).filter(Boolean)}
+function rvRefresh(){const v=variants&&variants.variants||[];const p=rv.protos||[];
+  const gen=v.map((x,i)=>`<label class="pill" style="cursor:pointer;margin:0 6px 6px 0"><input type="checkbox" value="v:${i}" ${!p.length&&(i===0||variants.runFirst===x.name)?'checked':''}> ${esc(x.name)}: ${esc(x.title||x.headline)}${rvBuilt(x)?' <span class="pill good">built page</span>':''}</label>`).join('');
+  const own=p.map((x,i)=>`<span style="display:inline-flex;align-items:center;gap:2px;margin:0 6px 6px 0"><label class="pill" style="cursor:pointer"><input type="checkbox" value="p:${i}" checked> ${esc(x.label)} <span class="pill accent">your prototype</span></label><button class="btn small" type="button" data-rv-del="${i}" aria-label="Remove ${esc(x.label)}">×</button></span>`).join('');
+  const warn=rv.control&&v.some(rvBuilt)&&build.html&&rv.control.html!==build.html?'<p class="note" style="margin-top:6px">The built page was made from a different control than the one loaded here. Press "Use the builder\'s control" so control and variant match.</p>':'';
+  $('rvVariantPick').innerHTML=gen||own?gen+own+warn:'Generate variants above or build your own prototype, then tick the ones to include.';
+  const ready=!!rv.control&&(v.length+p.length)>0;$('rvPreview').disabled=!ready;$('rvShare').disabled=!ready}
+async function rvNotesWithAI(selected,hyp){selected=selected.filter(v=>!v.isProto);if(!sampleFn||!selected.length)return;try{const r=await sampleFn.json(`Write stakeholder review notes for an A/B test. Hypothesis: ${hyp}. Current copy: headline "${$('rvAHead').value}", subhead "${$('rvASub').value}", CTA "${$('rvACta').value}". For each variant and each changed field (headline, subhead, cta), write a title (plain-language action, max 8 words, e.g. "Make the main action easier to find", no CRO jargon) and a body (max 35 words, two sentences: what changed and why, then the expected outcome labelled as an expectation). Variants: ${JSON.stringify(selected.map(v=>({name:v.name,headline:v.headline,subhead:v.subhead,cta:v.cta,rationale:v.rationale})))}. Return ONLY JSON {"variants":[{"name":"A","notes":{"headline":{"title":"","body":""},"subhead":{"title":"","body":""},"cta":{"title":"","body":""}}}]}`,{modelTier:'default',cache:false});
     (r.variants||[]).forEach(x=>{const v=selected.find(s=>s.name===x.name);if(!v||!x.notes)return;v.noteTitles={};v.noteBodies={};for(const k of ['headline','subhead','cta'])if(x.notes[k]){v.noteTitles[k]=x.notes[k].title;v.noteBodies[k]=x.notes[k].body}})}catch(e){}}
 function rvReview(){const selected=rvSelected();if(!selected.length)throw new Error('Tick at least one variant');const {controlHtml,anchors,vs}=rvBuildPages(selected);if(!rv.id)rv.id='rv-'+uid()+uid();const title=$('rvTitle').value.trim()||'Review';
   return{id:rv.id,title,slug:title,control:{label:rv.control.label.includes('concept')||rv.control.label.includes('reconstruction')?rv.control.label:rv.control.label+' (reconstruction from captured HTML)',html:controlHtml,anchors},variants:vs,experimentName:'Experiment 1 · '+title,defaultVariant:vs[0].key,viewport:$('rvViewport').value}}
@@ -764,6 +778,69 @@ $('rvFetch').onclick=async()=>{const url=$('rvUrl').value.trim();if(!url){$('rvS
 $('rvFile').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>rvSetControl(t,f.name+' (uploaded, reconstruction)'))};
 $('rvUseBuild').onclick=()=>{if(!build||!build.html){$('rvStatus').textContent='Upload a control in "Build the variant page" first.';return}$('rvAHead').value='';$('rvASub').value='';$('rvACta').value='';rvSetControl(build.html,build.name+' (uploaded, reconstruction)')};
 $('rvSampleBtn').onclick=()=>{$('rvAHead').value='';$('rvASub').value='';$('rvACta').value='';$('rvTitle').value='';rvSetControl(RV_EXAMPLE,'Juniper example (concept)');if(!$('varHyp').value.trim())$('varHyp').value='If we replace the open-ended "Start your assessment" with a time-boxed eligibility check, more first-time visitors will begin the assessment because the first step feels smaller.'};
+/* ---------- Your own prototype: goal + success + change, built on the loaded control ---------- */
+function rvLocate(html,find){let i=html.indexOf(find),len=find.length;if(i<0){try{const m=new RegExp(find.trim().split(/\s+/).map(reEsc).join('\\s+')).exec(html);if(m){i=m.index;len=m[0].length}}catch(e){}}return i<0?null:{i,len}}
+const rvText=el=>(el?el.textContent:'').replace(/\s+/g,' ').trim().slice(0,160);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-rv-del]');if(!b)return;rv.protos.splice(+b.dataset.rvDel,1);rvRefresh()});
+$('rvProtoRun').onclick=async()=>{const st=$('rvProtoStatus');const goal=$('rvGoal').value.trim(),success=$('rvSuccess').value.trim(),change=$('rvChange').value.trim();
+  if(!rv.control){st.textContent='Load a control page first (fetch, upload or the example).';return}if(!change){st.textContent='Describe the change to make.';return}if(!sampleFn){st.textContent='AI is not available here.';return}
+  const n=(rv.protos.length?Math.max(...rv.protos.map(x=>x.n)):0)+1,pid='p'+n,mode=$('rvProtoMode').value;
+  const ctx=`Goal: ${goal||'(not given)'}\nWhat success looks like: ${success||'(not given)'}\nChange to make: ${change}`;
+  const noteRule='note title: a plain-language action, max 8 words, no CRO jargon. note body: max 35 words, two sentences: what changed and why, then the expected effect on the success measure, labelled as an expectation.';
+  $('rvProtoRun').disabled=true;
+  try{let html,notes=[],title='',summary='';
+    if(mode==='rewrite'){const ks=keepSlim(rv.control.html);
+      if(ks.out.length>REWRITE_LIMIT)throw new Error(`this page is too large for a full redesign (${fmtN(ks.out.length/1024)} KB after scripts and images are set aside; the limit is ${REWRITE_LIMIT/1000} KB). Use targeted changes.`);
+      st.textContent='Redesigning the page. This can take a couple of minutes…';
+      const prompt=`You are a senior conversion designer and front-end developer. Redesign the control page below as a test prototype that implements the change described, so that it serves the goal and moves the success measure. Restructure sections, change the hierarchy, rewrite copy, and add or remove elements as the change calls for. Keep the brand recognisable: same logo, colours, fonts, imagery, links and form actions unless the change says otherwise.
+${ctx}
+Output rules:
+- Line one is a comment holding JSON: <!-- GXT-PROTO: {"title":"name for this prototype, max 6 words","summary":"two sentences: what changed and why, then anything you could not do","notes":[{"anchor":"${pid}c1","title":"","body":""}]} -->  (${noteRule})
+- Put data-a="${pid}c1", data-a="${pid}c2" and so on, on the 3 to 8 elements that carry the most important changes, one per note.
+- Then the complete HTML document from <!doctype html> to </html>. No Markdown, no code fences, no commentary.
+- Elements carrying a data-gxt-keep attribute stand in for the control's scripts, stylesheets and SVGs. Copy each one through exactly as written, in the same place, so tracking and styling keep working. Leave one out only if it is an SVG that belongs to something you removed. Text like gxt-data-3 stands in for embedded data; keep it as written.
+- New CSS goes in one <style> block at the end of <head>, with new class names prefixed gxt- . Reuse existing classes where they do the job. Design for mobile first.
+- No new scripts and no external resources. No claims, numbers or offers that are not in the change description or the control itself.
+Control HTML:
+${ks.out}`;
+      const r=await sampleFn(prompt,{modelTier:'default',cache:false,long:true});let t=String(r.text||'').trim().replace(/^```(?:html)?\s*/i,'').replace(/\s*```$/,'');
+      const meta=t.match(/<!--\s*GXT-PROTO:([\s\S]*?)-->/);let info={};if(meta){try{info=JSON.parse(meta[1])}catch(e){}t=t.replace(meta[0],'').trim()}
+      if(r.truncated||!/<\/html>\s*$/i.test(t))throw new Error('the redesigned page was too long to return in one go. Try targeted changes, or a smaller control.');
+      html=restoreKept(t,ks.kept).out;title=info.title||'';summary=info.summary||'';const d=new DOMParser().parseFromString(html,'text/html');
+      notes=(info.notes||[]).filter(x=>x&&/^p\d+c\d+$/.test(x.anchor||'')&&x.title&&x.body&&d.querySelector(`[data-a="${x.anchor}"]`)).map(x=>({kind:'new',title:x.title,body:x.body,after:rvText(d.querySelector(`[data-a="${x.anchor}"]`))||'(new section)',variant:`[data-a="${x.anchor}"]`}));
+    }else{
+      const slim=slimHtml(rv.control.html),cut=slim.length>EDIT_LIMIT;st.textContent='Building the prototype…';
+      const prompt=`You are a senior conversion designer and front-end developer. Build a test prototype from the control page below by implementing the change described, so that it serves the goal and moves the success measure. A change can mix new copy, changes to existing elements (move, restyle, resize, reorder, remove), brand-new elements and the restructuring of whole sections. Build all of it, and leave everything else exactly as it is.
+${ctx}
+Return ONLY JSON: {"title":"name for this prototype, max 6 words","summary":"two sentences: what changed and why, then anything you could not build","edits":[{"find":"","replace":"","note":{"title":"","body":""}}]}
+Rules for edits:
+- "find" is copied character for character from the control HTML, occurs once, and starts with the opening tag of the element being changed; include the whole element (up to a whole section, about 1500 characters, when restructuring). To add something new, find the element it goes next to.
+- "replace" is the complete replacement. To keep the found element and add something, repeat it and put the new markup before or after it. To remove it, use an empty string.
+- In every replace that changes or adds visible content, put data-a="${pid}c1", data-a="${pid}c2" and so on (numbered in order) on the outermost element you changed or added, so the review can point at it.
+- Edits are applied in order and must not overlap.
+- Script, style and SVG bodies, comments and embedded data were removed from what you see. Never include a script, style, svg or comment in a find string.
+- Styling: reuse the page's existing classes first. New CSS goes in with one edit whose find is "</head>" and whose replace is a <style> block followed by "</head>" (that edit needs no data-a and an empty note); prefix new class names with gxt- . Design for mobile first.
+- No scripts, external resources or tracking. No claims, numbers or offers that are not in the change description or the control itself.
+- ${noteRule}
+- At most 12 edits.
+Control HTML${cut?' (truncated)':''}:
+${slim.slice(0,EDIT_LIMIT)}`;
+      const r=await sampleFn.json(prompt,{modelTier:'default',cache:false});title=r.title||'';summary=r.summary||'';
+      let out=rv.control.html,ctrl=rv.controlTagged||rv.control.html;const applied=[];
+      (r.edits||[]).filter(e=>e&&typeof e.find==='string'&&e.find&&typeof e.replace==='string').slice(0,15).forEach(e=>{const at=rvLocate(out,e.find);if(!at)return;out=out.slice(0,at.i)+e.replace+out.slice(at.i+at.len);
+        const m=e.replace.match(new RegExp(`data-a=["'](${pid}c\\d+)["']`));if(!m)return;const id=m[1];let inControl=false;
+        const c=rvLocate(ctrl,e.find);if(c&&e.replace.trim()&&/^\s*<[a-zA-Z]/.test(ctrl.slice(c.i,c.i+c.len))){const frag=ctrl.slice(c.i,c.i+c.len);ctrl=ctrl.slice(0,c.i)+frag.replace(/^(\s*<[a-zA-Z][\w-]*)/,`$1 data-a="${id}"`)+ctrl.slice(c.i+c.len);inControl=true}
+        applied.push({id,inControl,note:e.note||{}})});
+      if(out===rv.control.html)throw new Error('none of the changes could be placed on this page. Describe the change differently, or try a full page redesign.');
+      html=out;rv.controlTagged=ctrl;const dv=new DOMParser().parseFromString(html,'text/html'),dc=new DOMParser().parseFromString(ctrl,'text/html');
+      notes=applied.map(a=>{const ve=dv.querySelector(`[data-a="${a.id}"]`);if(!ve||!a.note.title||!a.note.body)return null;const ce=a.inControl?dc.querySelector(`[data-a="${a.id}"]`):null;
+        return ce?{kind:'imp',title:a.note.title,body:a.note.body,before:rvText(ce)||'(element)',after:rvText(ve)||'(element)',control:`[data-a="${a.id}"]`,variant:`[data-a="${a.id}"]`}:{kind:'new',title:a.note.title,body:a.note.body,after:rvText(ve)||'(new element)',variant:`[data-a="${a.id}"]`}}).filter(Boolean);
+      if(cut)summary+=' The control was too large to send in full, so only the first part was considered.'}
+    const proto={isProto:true,n,key:pid,label:`Prototype ${n}${title?' · '+title:''}`,html,notes,summary,goal,success,change,mode};rv.protos.push(proto);rvRefresh();
+    if(!$('rvTitle').value.trim()&&goal)$('rvTitle').value=goal.slice(0,80);
+    st.textContent=`Built ${proto.label} with ${notes.length} annotated change${notes.length===1?'':'s'}. ${summary}`}
+  catch(e){st.textContent=e&&e.code==='rate_limited'?'Rate limited, wait a moment and try again.':'Could not build the prototype: '+(e.message||'unknown')}
+  finally{$('rvProtoRun').disabled=false}};
 $('rvNew').onclick=()=>{rv.id=null;rv.links=null;rv.receipt=null;$('rvLinks').classList.add('hidden');$('rvStatus').textContent='New review: the next share creates a new link.'};
 $('rvPreview').onclick=async()=>{$('rvStatus').textContent='Building…';$('rvPreview').disabled=true;try{const review=rvReview();await rvNotesWithAI(rvSelected(),$('varHyp').value);Object.assign(review,{variants:rvBuildPages(rvSelected()).vs});const r=await rvPost({action:'build',review});const blob=new Blob([r.html],{type:'text/html'});const u=URL.createObjectURL(blob);window.open(u,'_blank');$('rvStatus').textContent=`Review built (${Math.round(r.size/1024)} KB, template ${r.templateVersion}). Opened in a new tab; share to get a permanent link.`}catch(e){$('rvStatus').textContent='Build failed: '+e.message}finally{$('rvPreview').disabled=false}};
 $('rvShare').onclick=async()=>{$('rvStatus').textContent='Publishing…';$('rvShare').disabled=true;try{const review=rvReview();await rvNotesWithAI(rvSelected(),$('varHyp').value);review.variants=rvBuildPages(rvSelected()).vs;const r=await rvPost({action:'share',review,provider:$('rvProvider').value||undefined,receipt:rv.id===review.id?rv.receipt:null});rv.links=r;rvShowLinks(r,review.title);
