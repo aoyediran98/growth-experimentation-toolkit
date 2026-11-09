@@ -18,6 +18,15 @@
   if (nav) nav.insertAdjacentElement("afterend", b);
   else document.body.insertBefore(b, document.body.firstChild);
 
+  // The storage badge on the toolkit says "shared"; in the demo nothing is shared or kept.
+  const pill = document.getElementById("storePill");
+  if (pill) {
+    // Only replace the toolkit's own labels, so a translated version of ours is left alone.
+    const fix = () => { if (/^Storage: (shared|this browser|checking)$/.test(pill.textContent.trim())) { pill.textContent = "Storage: this visit only"; pill.className = "pill warn"; } };
+    new MutationObserver(fix).observe(pill, { childList: true, characterData: true, subtree: true });
+    fix();
+  }
+
   // The prototype builder in the Variants review panel: the example control comes with the example brief it was recorded with.
   const EXAMPLE = {
     rvGoal: "More first-time visitors start the assessment",
