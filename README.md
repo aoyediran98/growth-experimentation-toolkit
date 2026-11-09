@@ -10,6 +10,9 @@ Every page has a language picker in the top nav (English, Spanish, Dutch, French
 
 All statistics (sample size, power, two-proportion test with CI, SRM chi-square, Holm correction, annualised value at CI bounds, Monte Carlo peeking simulation) are computed in the browser in plain JavaScript. The model only writes narrative around numbers it is handed.
 
+## Demo deployment
+A second Vercel project, `gxt-demo`, serves the same code with `DEMO_MODE=1` and no Anthropic key, Redis or review token. In demo mode `/api/ai` answers only from `demo/recordings.json` (real answers recorded from the example flows, matched with dates and whitespace ignored, plus a string-by-string translation dictionary for es, nl and fr) and returns a "this is a demo" message for anything else; `/api/store` keeps each visitor's data in memory, separate from other visitors, never in the database; `/api/review` can build a review for preview but cannot fetch pages or publish. `public/demo.js` shows a banner on every page. To refresh the recordings after changing a prompt or an example, re-run the example flows against the live site and rebuild `demo/recordings.json`, then redeploy `gxt-demo`.
+
 ## Run locally
 ```
 npm install

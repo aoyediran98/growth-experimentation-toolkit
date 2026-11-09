@@ -5,6 +5,7 @@
 // Backed by Upstash Redis (Vercel Marketplace "Upstash for Redis" sets KV_REST_API_URL / KV_REST_API_TOKEN).
 // Without those env vars it falls back to an in-memory map, which resets on each cold start (fine for local dev only).
 import { Redis } from "@upstash/redis";
+import { isDemo, visitorScope } from "./_demo.js";
 
 const mem = globalThis.__gxtMem || (globalThis.__gxtMem = new Map());
 const memH = globalThis.__gxtMemH || (globalThis.__gxtMemH = new Map());
@@ -63,7 +64,16 @@ async function runOp(r, { op, key, field, value }) {
 }
 
 export default async function handler(req, res) {
-  const r = redis();
+  const demo = isDemo();
+  const r = demo ? null : redis();
+  if (demo) {
+    // Keep each visitor's demo data apart, and keep the in-memory store small.
+    const scope = visitorScope(req);
+    if (req.query?.key) req.query.key = scope + req.query.key;
+    if (req.body?.key) req.body.key = scope + req.body.key;
+    if (req.body?.op === "mget" && Array.isArray(req.body.value)) req.body.value = req.body.value.map((k) => scope + k);
+    if (mem.size + memH.size > 3000) (mem.clear(), memH.clear());
+  }
   if (req.method === "GET") {
     const key = req.query.key;
     if (!key) return res.status(400).json({ error: "key is required" });

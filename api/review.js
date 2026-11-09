@@ -23,6 +23,7 @@ import crypto from "crypto";
 import zlib from "zlib";
 import { put, list, del } from "@vercel/blob";
 import { Redis } from "@upstash/redis";
+import { isDemo } from "./_demo.js";
 
 export const config = { api: { bodyParser: { sizeLimit: "4mb" } } };
 
@@ -306,7 +307,11 @@ export default async function handler(req, res) {
   if (hn) providers.push("here.now");
   const configured = !!(process.env.REVIEW_SHARE_TOKEN || "").trim();
   try {
-    if (action === "status") return res.status(200).json({ tokenRequired: true, tokenConfigured: configured, authorised: authorised(req), providers, account: hn ? ACCOUNT : null, templateVersion: template().version });
+    if (action === "status") return res.status(200).json({ demo: isDemo(), tokenRequired: true, tokenConfigured: configured, authorised: authorised(req), providers, account: hn ? ACCOUNT : null, templateVersion: template().version });
+    if (isDemo()) {
+      if (action === "build") { const html = compose(normalise(req.body.review), null); return res.status(200).json({ html, size: Buffer.byteLength(html), sha256: sha(html), templateVersion: template().version }); }
+      return res.status(403).json({ error: "Publishing and fetching pages are switched off in the demo. Preview review still works." });
+    }
     if (!configured) return res.status(503).json({ error: "REVIEW_SHARE_TOKEN is not set on this deployment; set it so only you can build and publish reviews" });
     if (!authorised(req)) return res.status(401).json({ error: "Your publish token is missing or wrong" });
     if (action === "capture") return res.status(200).json(await capture(req.body.url));

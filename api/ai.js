@@ -1,6 +1,7 @@
 // POST /api/ai  { input: string | [{role, content}], json: boolean, tier: "quick"|"default"|"complex", long: boolean, images: [dataURL] }
 // images (used by the suite pages) are attached ahead of a string input.
 import Anthropic from "@anthropic-ai/sdk";
+import { isDemo, demoAnswer } from "./_demo.js";
 
 const MODELS = { quick: "claude-haiku-5-5", default: "claude-sonnet-5-5", complex: "claude-sonnet-5-5" };
 // Reasoning tokens count against max_tokens and were cutting the JSON short; the methods are explicit enough without them.
@@ -23,6 +24,7 @@ function parseJSON(text) {
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  if (isDemo()) return demoAnswer(req.body, res);
   if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY is not set" });
   const { input, json = false, tier = "default", long = false, images = [] } = req.body || {};
   if (!input) return res.status(400).json({ error: "input is required" });
