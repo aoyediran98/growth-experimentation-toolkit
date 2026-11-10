@@ -13,7 +13,7 @@
   const b = document.createElement("div");
   b.className = "demo-banner";
   b.setAttribute("role", "note");
-  b.innerHTML = "<strong>Demo</strong><span>This is a working copy of the Growth Experimentation Toolkit. The AI results are real but pre-recorded, so use the <b>Load example</b> or <b>Load sample</b> buttons and run them. The statistics tools run live, and anything you add stays in your browser.</span>";
+  b.innerHTML = "<strong>Demo</strong><span>This is a working copy of the Growth Experimentation Toolkit. The AI results are real but pre-recorded, so press Load example or Load sample on any page and run it. The statistics tools run live, and anything you add stays in your browser.</span>"; // one sentence, so it translates as one string
   const nav = document.querySelector(".suite-nav");
   if (nav) nav.insertAdjacentElement("afterend", b);
   else document.body.insertBefore(b, document.body.firstChild);
